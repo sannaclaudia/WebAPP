@@ -31,25 +31,7 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
         <i className="bi bi-list-ul me-2"></i>
         Menu & Ingredients
       </h5>
-      
-      {/* Base Dishes */}
-      <div className="mb-4">
-        <h6 className="fw-semibold mb-3 text-muted">Base Dishes</h6>
-        <div className="row g-2">
-          {dishes.map(dish => (
-            <div key={dish.id} className="col-12 col-sm-6 col-lg-4">
-              <Card className="border-0 shadow-sm text-center" style={{ borderRadius: '10px' }}>
-                <Card.Body className="p-2">
-                  <div className="fw-semibold text-capitalize small">{dish.name}</div>
-                  <div className="small text-muted">
-                    Base price: €{dish.base_price ? dish.base_price.toFixed(2) : '0.00'}
-                  </div>
-                </Card.Body>
-              </Card>
-            </div>
-          ))}
-        </div>
-      </div>
+     
 
       {/* Sizes (replaces Size Multipliers) */}
       <div className="mb-4">
