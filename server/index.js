@@ -266,7 +266,7 @@ app.post('/api/orders', isLoggedIn, async (req, res) => {
     }
     
     // Create the order instance
-    const order = await orderDAO.createOrder({
+    const order = await orderDao.createOrder({
       user_id,
       dish_id,
       size,
