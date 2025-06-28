@@ -1,0 +1,217 @@
+'use strict';
+
+const db = require('../db');
+
+//--------------------------------------------------------------------------
+// Get all ingredients with availability
+exports.getAllIngredients = () => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM Ingredients ORDER BY name';
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        const ingredients = rows.map(row => ({
+          id: row.id,
+          name: row.name,
+          price: row.price,
+          available_portions: row.available_portions
+        }));
+        resolve(ingredients);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Get ingredient by ID
+exports.getIngredientById = (id) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT * FROM Ingredients WHERE id = ?';
+    db.get(sql, [id], (err, row) => {
+      if (err) {
+        reject(err);
+      } else if (row === undefined) {
+        resolve(null);
+      } else {
+        const ingredient = {
+          id: row.id,
+          name: row.name,
+          price: row.price,
+          available_portions: row.available_portions
+        };
+        resolve(ingredient);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Get ingredient requirements (dependencies)
+exports.getIngredientRequirements = () => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT ir.ingredient_id, ir.required_ingredient_id, 
+             i1.name as ingredient_name, i2.name as required_ingredient_name
+      FROM IngredientRequirements ir
+      JOIN Ingredients i1 ON ir.ingredient_id = i1.id
+      JOIN Ingredients i2 ON ir.required_ingredient_id = i2.id
+    `;
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Get ingredient incompatibilities
+exports.getIngredientIncompatibilities = () => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT ii.ingredient_id, ii.incompatible_with_id,
+             i1.name as ingredient_name, i2.name as incompatible_ingredient_name
+      FROM IngredientIncompatibilities ii
+      JOIN Ingredients i1 ON ii.ingredient_id = i1.id
+      JOIN Ingredients i2 ON ii.incompatible_with_id = i2.id
+    `;
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Get requirements for a specific ingredient
+exports.getRequirementsForIngredient = (ingredientId) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT ir.required_ingredient_id, i.name as required_ingredient_name
+      FROM IngredientRequirements ir
+      JOIN Ingredients i ON ir.required_ingredient_id = i.id
+      WHERE ir.ingredient_id = ?
+    `;
+    db.all(sql, [ingredientId], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Get incompatibilities for a specific ingredient
+exports.getIncompatibilitiesForIngredient = (ingredientId) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT ii.incompatible_with_id, i.name as incompatible_ingredient_name
+      FROM IngredientIncompatibilities ii
+      JOIN Ingredients i ON ii.incompatible_with_id = i.id
+      WHERE ii.ingredient_id = ?
+      UNION
+      SELECT ii.ingredient_id, i.name as incompatible_ingredient_name
+      FROM IngredientIncompatibilities ii
+      JOIN Ingredients i ON ii.ingredient_id = i.id
+      WHERE ii.incompatible_with_id = ?
+    `;
+    db.all(sql, [ingredientId, ingredientId], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Check ingredient availability
+exports.checkIngredientAvailability = (ingredientId, requiredQuantity = 1) => {
+  return new Promise((resolve, reject) => {
+    const sql = 'SELECT available_portions FROM Ingredients WHERE id = ?';
+    db.get(sql, [ingredientId], (err, row) => {
+      if (err) {
+        reject(err);
+      } else if (row === undefined) {
+        resolve(false);
+      } else {
+        // If available_portions is NULL, ingredient has unlimited availability
+        if (row.available_portions === null) {
+          resolve(true);
+        } else {
+          resolve(row.available_portions >= requiredQuantity);
+        }
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Update ingredient availability (decrease when order is confirmed)
+exports.updateIngredientAvailability = (ingredientId, quantityUsed) => {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      UPDATE Ingredients 
+      SET available_portions = available_portions - ? 
+      WHERE id = ? AND available_portions IS NOT NULL AND available_portions >= ?
+    `;
+    db.run(sql, [quantityUsed, ingredientId, quantityUsed], function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(this.changes);
+      }
+    });
+  });
+};
+
+//--------------------------------------------------------------------------
+// Update ingredient availability after order placement
+exports.updateIngredientAvailability = (ingredientIds) => {
+  return new Promise((resolve, reject) => {
+    if (ingredientIds.length === 0) {
+      resolve();
+      return;
+    }
+
+    // Count ingredient quantities
+    const ingredientCounts = {};
+    ingredientIds.forEach(id => {
+      ingredientCounts[id] = (ingredientCounts[id] || 0) + 1;
+    });
+
+    const sql = `
+      UPDATE Ingredients 
+      SET available_portions = available_portions - ?
+      WHERE id = ? AND available_portions IS NOT NULL AND available_portions >= ?
+    `;
+
+    let completed = 0;
+    const total = Object.keys(ingredientCounts).length;
+    let hasError = false;
+
+    for (const [ingredientId, quantity] of Object.entries(ingredientCounts)) {
+      db.run(sql, [quantity, parseInt(ingredientId), quantity], (err) => {
+        if (err && !hasError) {
+          hasError = true;
+          reject(err);
+        } else {
+          completed++;
+          if (completed === total && !hasError) {
+            resolve();
+          }
+        }
+      });
+    }
+  });
+};
+
