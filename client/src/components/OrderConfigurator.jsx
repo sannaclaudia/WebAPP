@@ -224,10 +224,18 @@ function OrderConfigurator({
 
   return (
     <div>
-      <h5 className="fw-bold mb-4" style={{ color: '#1e40af' }}>
-        <i className="bi bi-gear me-2"></i>
-        Configure Your Order
-      </h5>
+      {/* Header with total price in top right */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h5 className="fw-bold mb-0" style={{ color: '#1e40af' }}>
+          <i className="bi bi-gear me-2"></i>
+          Configure Your Order
+        </h5>
+        <div className="text-end">
+          <div className="fw-bold" style={{ color: '#1e40af', fontSize: '1.2rem' }}>
+            Total: €{calculateTotal().toFixed(2)}
+          </div>
+        </div>
+      </div>
 
       {/* Dish Selection */}
       <Form.Group className="mb-4">
@@ -282,9 +290,9 @@ function OrderConfigurator({
         <div className="mb-4">
           <h6 className="fw-semibold mb-2">Selected Ingredients ({selectedIngredients.length})</h6>
           <div className="d-flex flex-wrap gap-1">
-            {getSelectedIngredientsWithQuantity().map(({ ingredient, quantity }) => (
+            {getSelectedIngredientsWithQuantity().map(({ ingredient, quantity }, index) => (
               <Badge 
-                key={ingredient.id} 
+                key={`selected-${ingredient.id}-${index}`} 
                 bg="success" 
                 className="d-flex align-items-center"
                 style={{ fontSize: '0.8rem' }}
@@ -312,7 +320,7 @@ function OrderConfigurator({
             const canAdd = canAddIngredient(ingredient);
             
             return (
-              <div key={ingredient.id} className="col-12">
+              <div key={`ingredient-option-${ingredient.id}`} className="col-12">
                 <div className="d-flex gap-2">
                   <Button
                     variant={status.variant}
@@ -376,17 +384,12 @@ function OrderConfigurator({
             <span>Base price for {selectedSize}</span>
             <span>€{{'Small': 5, 'Medium': 7, 'Large': 9}[selectedSize].toFixed(2)}</span>
           </div>
-          {getSelectedIngredientsWithQuantity().map(({ ingredient, quantity }) => (
-            <div key={ingredient.id} className="d-flex justify-content-between mb-1 small text-muted">
+          {getSelectedIngredientsWithQuantity().map(({ ingredient, quantity }, index) => (
+            <div key={`summary-${ingredient.id}-${index}`} className="d-flex justify-content-between mb-1 small text-muted">
               <span>+ {ingredient.name} x{quantity}</span>
               <span>€{(ingredient.price * quantity).toFixed(2)}</span>
             </div>
           ))}
-          <hr className="my-2" />
-          <div className="d-flex justify-content-between fw-bold">
-            <span>Total</span>
-            <span>€{calculateTotal().toFixed(2)}</span>
-          </div>
         </Card.Body>
       </Card>
 

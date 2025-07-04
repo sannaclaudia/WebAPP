@@ -17,7 +17,7 @@ exports.getUserById = (id) => {
         const user = {
           id: row.id,
           username: row.username,
-          twofa_enabled: row.twofa_enabled === 1
+          totp_secret: row.totp_secret
         };
         resolve(user);
       }
@@ -39,7 +39,6 @@ exports.getUser = (username, password) => {
         const user = {
           id: row.id,
           username: row.username,
-          twofa_enabled: row.twofa_enabled === 1,
           totp_secret: row.totp_secret
         };
 

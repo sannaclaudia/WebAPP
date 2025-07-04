@@ -17,8 +17,13 @@ function OrderConfiguratorLayout() {
   const [selectedSize, setSelectedSize] = useState('Medium');
   const [selectedIngredients, setSelectedIngredients] = useState([]);
 
-  // Define only ingredient limits without any multipliers
+  // Pricing state - will be loaded from server
   const [pricing, setPricing] = useState({
+    prices: {
+      'Small': 5,
+      'Medium': 7,
+      'Large': 9
+    },
     maxIngredients: {
       'Small': 3,
       'Medium': 5,
@@ -29,14 +34,16 @@ function OrderConfiguratorLayout() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Fetch dishes and ingredients
-        const [dishesData, ingredientsData] = await Promise.all([
+        // Fetch dishes, ingredients, and pricing
+        const [dishesData, ingredientsData, pricingData] = await Promise.all([
           API.getDishes(),
-          API.getIngredients()
+          API.getIngredients(),
+          API.getPricing()
         ]);
         
         setDishes(dishesData);
         setIngredients(ingredientsData);
+        setPricing(pricingData);
         
         // Set default dish
         if (dishesData.length > 0) {
@@ -58,18 +65,26 @@ function OrderConfiguratorLayout() {
       return;
     }
 
-    // Make sure we're sending the expected format
+    // Calculate total price using the server pricing
+    let totalPrice = pricing.prices[selectedSize] || 7;
+    
+    selectedIngredients.forEach(ingId => {
+      const ingredient = ingredients.find(ing => ing.id === ingId);
+      if (ingredient && ingredient.price) {
+        totalPrice += ingredient.price;
+      }
+    });
+
     const orderData = {
       dish_id: selectedDish.id,
       size: selectedSize,
       ingredients: selectedIngredients,
+      total_price: totalPrice,
     };
 
-    console.log('Submitting order with data:', orderData);
 
     try {
       const result = await API.submitOrder(orderData);
-      console.log('Order submitted successfully:', result);
       
       showMessage('Order placed successfully!', 'success');
       
@@ -118,7 +133,21 @@ function OrderConfiguratorLayout() {
 
   return (
     <Row className="g-3 g-md-4">
+      {/* LEFT SIDE: Entire ingredient list (as per professor's requirements) */}
       <Col xs={12} xl={8}>
+        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+          <div className="card-body p-0">
+            <MenuBrowser
+              dishes={dishes}
+              ingredients={ingredients}
+              pricing={pricing}
+            />
+          </div>
+        </div>
+      </Col>
+      
+      {/* RIGHT SIDE: Current configuration (as per professor's requirements) */}
+      <Col xs={12} xl={4}>
         <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
           <div className="card-body p-3 p-md-4">
             <OrderConfigurator
@@ -134,18 +163,6 @@ function OrderConfiguratorLayout() {
               setSelectedIngredients={setSelectedIngredients}
               onSubmitOrder={handleSubmitOrder}
               showMessage={showMessage}
-            />
-          </div>
-        </div>
-      </Col>
-      
-      <Col xs={12} xl={4}>
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
-          <div className="card-body p-0">
-            <MenuBrowser
-              dishes={dishes}
-              ingredients={ingredients}
-              pricing={pricing}
             />
           </div>
         </div>

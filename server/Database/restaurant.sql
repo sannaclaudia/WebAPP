@@ -1,12 +1,35 @@
 -- Drop existing tables (if reinitializing)
 DROP TABLE IF EXISTS OrderIngredients;
-DROP TABLE IF EXISTS OrderItems;
 DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS IngredientIncompatibilities;
 DROP TABLE IF EXISTS IngredientRequirements;
 DROP TABLE IF EXISTS Ingredients;
 DROP TABLE IF EXISTS Dishes;
 DROP TABLE IF EXISTS Users;
+
+-- Orders table to store customer orders
+CREATE TABLE Orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  dish_id INTEGER NOT NULL,
+  size VARCHAR(10) NOT NULL,
+  total_price DECIMAL(10,2) NOT NULL,
+  status VARCHAR(20) DEFAULT 'confirmed',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  used_2fa BOOLEAN DEFAULT FALSE,
+  FOREIGN KEY (user_id) REFERENCES Users(id),
+  FOREIGN KEY (dish_id) REFERENCES Dishes(id)
+);
+
+-- OrderIngredients table to store the ingredients for each order
+CREATE TABLE OrderIngredients (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_item_id INTEGER NOT NULL,
+  ingredient_id INTEGER NOT NULL,
+  quantity INTEGER DEFAULT 1,
+  FOREIGN KEY (order_item_id) REFERENCES Orders(id) ON DELETE CASCADE,
+  FOREIGN KEY (ingredient_id) REFERENCES Ingredients(id)
+);
 
 ---------------------------
 -- Users Table (with TOTP secret)
@@ -16,8 +39,7 @@ CREATE TABLE Users (
   username TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   salt TEXT NOT NULL,
-  totp_secret TEXT,
-  twofa_enabled INTEGER NOT NULL DEFAULT 0
+  totp_secret TEXT NOT NULL
 );
 
 ---------------------------
@@ -25,7 +47,20 @@ CREATE TABLE Users (
 ---------------------------
 CREATE TABLE Dishes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  name TEXT NOT NULL CHECK(name IN ('pizza', 'pasta', 'salad'))
+  name TEXT NOT NULL UNIQUE
+);
+
+---------------------------
+-- Dish Pricing and Size Constraints Table
+---------------------------
+CREATE TABLE DishPricing (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dish_id INTEGER NOT NULL,
+  size VARCHAR(10) NOT NULL,
+  base_price DECIMAL(10,2) NOT NULL,
+  max_ingredients INTEGER NOT NULL,
+  UNIQUE(dish_id, size),
+  FOREIGN KEY (dish_id) REFERENCES Dishes(id)
 );
 
 ---------------------------
@@ -60,47 +95,30 @@ CREATE TABLE IngredientIncompatibilities (
   FOREIGN KEY (incompatible_with_id) REFERENCES Ingredients(id)
 );
 
----------------------------
--- Orders Table
----------------------------
-CREATE TABLE Orders (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_id INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'confirmed' CHECK(status IN ('confirmed', 'cancelled')),
-  used_2fa INTEGER NOT NULL DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES Users(id)
-);
-
----------------------------
--- Order Items (each dish ordered in an order)
----------------------------
-CREATE TABLE OrderItems (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  order_id INTEGER NOT NULL,
-  dish_id INTEGER NOT NULL,
-  size TEXT NOT NULL CHECK(size IN ('Small', 'Medium', 'Large')),
-  FOREIGN KEY (order_id) REFERENCES Orders(id),
-  FOREIGN KEY (dish_id) REFERENCES Dishes(id)
-);
-
----------------------------
--- Order Ingredients (ingredients selected on an order item)
----------------------------
-CREATE TABLE OrderIngredients (
-  order_item_id INTEGER NOT NULL,
-  ingredient_id INTEGER NOT NULL,
-  PRIMARY KEY (order_item_id, ingredient_id),
-  FOREIGN KEY (order_item_id) REFERENCES OrderItems(id),
-  FOREIGN KEY (ingredient_id) REFERENCES Ingredients(id)
-);
 
 ------------------------------------
 -- Insert initial data
 ------------------------------------
 
 -- Insert Base Dishes
-INSERT INTO Dishes (name) VALUES ('pizza'), ('pasta'), ('salad');
+INSERT INTO Dishes (name) VALUES 
+  ('pizza'),
+  ('pasta'),
+  ('salad');
+
+-- Insert Dish Pricing and Size Constraints
+INSERT INTO DishPricing (dish_id, size, base_price, max_ingredients) VALUES 
+  (1, 'Small', 5.00, 3),
+  (1, 'Medium', 7.00, 5),
+  (1, 'Large', 9.00, 7),
+  (2, 'Small', 5.00, 3),
+  (2, 'Medium', 7.00, 5),
+  (2, 'Large', 9.00, 7),
+  (3, 'Small', 5.00, 3),
+  (3, 'Medium', 7.00, 5),
+  (3, 'Large', 9.00, 7);
+
+
 
 -- Insert Ingredients with prices and availability
 INSERT INTO Ingredients (name, price, available_portions) VALUES 
@@ -143,43 +161,31 @@ INSERT INTO IngredientIncompatibilities (ingredient_id, incompatible_with_id)
 INSERT INTO IngredientIncompatibilities (ingredient_id, incompatible_with_id)
   SELECT i1.id, i2.id FROM Ingredients i1, Ingredients i2 WHERE i1.name = 'olives' AND i2.name = 'anchovies';
 
--- Insert Users (passwords are all 'password' hashed with salt)
+-- Insert Users (passwords are all 'password' hashed with salt, all with same TOTP secret)
 INSERT INTO Users (username, password_hash, salt, totp_secret) VALUES 
   ('alice', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI'),
   ('bob', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI'),
-  ('charlie', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', NULL),
-  ('diana', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', NULL);
+  ('charlie', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI'),
+  ('diana', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI');
 
 -- Insert sample orders
 -- Alice's orders (user_id = 1)
-INSERT INTO Orders (user_id, status, used_2fa, created_at) VALUES 
-  (1, 'confirmed', 1, '2024-12-20 10:30:00'),
-  (1, 'confirmed', 1, '2024-12-21 14:15:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
+  (1, 1, 'Small',7.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
+  (1, 3, 'Small',6.5 ,'confirmed', 1, '2024-12-21 14:15:00');
 
--- Bob's orders (user_id = 2)  
-INSERT INTO Orders (user_id, status, used_2fa, created_at) VALUES 
-  (2, 'confirmed', 1, '2024-12-20 12:00:00'),
-  (2, 'confirmed', 1, '2024-12-21 18:30:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
+  (1, 2, 'Large',11.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
+  (1, 3, 'Small',6.6 ,'confirmed', 1, '2024-12-21 14:15:00');
 
--- Order items for Alice's first order (2 Small dishes)
-INSERT INTO OrderItems (order_id, dish_id, size) VALUES
-  (1, 1, 'Small'), -- pizza small
-  (1, 3, 'Small'); -- salad small
+-- Bob's order (user_id = 2)
+INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
+  (2, 2, 'Medium',9.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
+  (2, 3, 'Small',8.7,'confirmed', 1, '2024-12-21 14:15:00');
 
--- Order items for Alice's second order (1 Medium, 1 Large)
-INSERT INTO OrderItems (order_id, dish_id, size) VALUES
-  (2, 2, 'Medium'), -- pasta medium
-  (2, 1, 'Large');  -- pizza large
-
--- Order items for Bob's first order (2 Small dishes)
-INSERT INTO OrderItems (order_id, dish_id, size) VALUES
-  (3, 2, 'Small'), -- pasta small
-  (3, 3, 'Small'); -- salad small
-
--- Order items for Bob's second order (1 Medium, 1 Large)
-INSERT INTO OrderItems (order_id, dish_id, size) VALUES
-  (4, 1, 'Medium'), -- pizza medium
-  (4, 3, 'Large');  -- salad large
+INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
+  (2, 1, 'Medium',9.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
+  (2, 3, 'Small',6.9,'confirmed', 1, '2024-12-21 14:15:00');
 
 -- Sample ingredients for orders (adjust availability accordingly)
 -- Alice's first order ingredients
@@ -206,30 +212,23 @@ INSERT INTO OrderIngredients (order_item_id, ingredient_id) VALUES
 -- to match the requirements in the exam text
 -- Ingredients for Order 3, Item 1 (assume pasta: tomatoes, mozzarella, olives)
 INSERT INTO OrderIngredients (order_item_id, ingredient_id)
-  SELECT oi.id, i.id FROM OrderItems oi, Ingredients i 
-    WHERE oi.order_id = 3 AND oi.size = 'Small' AND oi.rowid = (SELECT MIN(rowid) FROM OrderItems WHERE order_id = 3)
+  SELECT oi.id, i.id FROM Orders oi, Ingredients i 
+    WHERE oi.id = 3 AND oi.size = 'Small' 
       AND i.name IN ('tomatoes', 'mozzarella', 'olives');
 -- Ingredients for Order 3, Item 2 (assume salad: tomatoes, mozzarella)
 INSERT INTO OrderIngredients (order_item_id, ingredient_id)
-  SELECT oi.id, i.id FROM OrderItems oi, Ingredients i 
-    WHERE oi.order_id = 3 AND oi.size = 'Small' AND oi.rowid = (SELECT MAX(rowid) FROM OrderItems WHERE order_id = 3)
+  SELECT oi.id, i.id FROM Orders oi, Ingredients i 
+    WHERE oi.id = 3 AND oi.size = 'Small'
       AND i.name IN ('tomatoes', 'mozzarella');
 
--- Order 4: 1 Medium dish and 1 Large dish for bob
-INSERT INTO Orders (user_id, status, used_2fa) VALUES (2, 'confirmed', 1);  -- Order id 4
--- Order 4, Item 1: pizza, Medium
-INSERT INTO OrderItems (order_id, dish_id, size)
-  SELECT 4, id, 'Medium' FROM Dishes WHERE name = 'pizza';
--- Order 4, Item 2: salad, Large
-INSERT INTO OrderItems (order_id, dish_id, size)
-  SELECT 4, id, 'Large' FROM Dishes WHERE name = 'salad';
 -- Ingredients for Order 4, Item 1 (assume pizza: tomatoes, mozzarella, parmesan)
 INSERT INTO OrderIngredients (order_item_id, ingredient_id)
-  SELECT oi.id, i.id FROM OrderItems oi, Ingredients i 
-    WHERE oi.order_id = 4 AND oi.size = 'Medium' AND oi.rowid = (SELECT MIN(rowid) FROM OrderItems WHERE order_id = 4)
+  SELECT oi.id, i.id FROM Orders oi, Ingredients i 
+    WHERE oi.id = 4 AND oi.size = 'Medium'
       AND i.name IN ('tomatoes', 'mozzarella', 'parmesan');
+      
 -- Ingredients for Order 4, Item 2 (assume salad: tomatoes, olives, tuna)
 INSERT INTO OrderIngredients (order_item_id, ingredient_id)
-  SELECT oi.id, i.id FROM OrderItems oi, Ingredients i 
-    WHERE oi.order_id = 4 AND oi.size = 'Large' AND oi.rowid = (SELECT MAX(rowid) FROM OrderItems WHERE order_id = 4)
+  SELECT oi.id, i.id FROM Orders oi, Ingredients i 
+    WHERE oi.id = 4 AND oi.size = 'Large'
       AND i.name IN ('tomatoes', 'olives', 'tuna');

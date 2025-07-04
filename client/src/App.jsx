@@ -22,6 +22,8 @@ function App() {
   const [pendingAdminUser, setPendingAdminUser] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('danger');
+  const [isUpgradeMode, setIsUpgradeMode] = useState(false);
+  const [upgradeReturnPath, setUpgradeReturnPath] = useState('/');
 
   const navigate = useNavigate();
 
@@ -35,21 +37,14 @@ function App() {
       .catch(() => setUser(null));
   }, []);
 
-  // So if the user can do the TOTP check, then we set the state to require TOTP
-  // and store the pending admin user data for later verification.
+  // All users now require TOTP, so we always set totpRequired to true
   async function handleLogin(credentials) {
     try {
       const res = await API.logIn(credentials);
-      if (res.canDoTotp) {
-        setTotpRequired(true);
-        setPendingAdminUser(res);
-        setUser(null);
-      } else {
-        setUser({ ...res, isTotp: false });
-        setTotpRequired(false);
-        setPendingAdminUser(null);
-        navigate('/');
-      }
+      // Since all users require TOTP now, we always require TOTP verification
+      setTotpRequired(true);
+      setPendingAdminUser(res);
+      setUser(null);
       setMessage('');
     } catch (err) {
       setUser(null);
@@ -61,7 +56,7 @@ function App() {
   }
 
   //-----------------------------------------------------------------------------
-  // Handle TOTP verification
+  // Handle TOTP verification (works for both initial login and session upgrade)
   async function handleTotp(code) {
     try {
       await API.logInTotp(code);
@@ -69,29 +64,35 @@ function App() {
       setUser(u);
       setTotpRequired(false);
       setPendingAdminUser(null);
+      setIsUpgradeMode(false);
       setMessage('');
-      navigate('/');
+      
+      // Navigate appropriately based on the mode
+      if (isUpgradeMode) {
+        // Return to the page where the upgrade was initiated
+        navigate(upgradeReturnPath);
+      } else {
+        // Go to home page after initial login
+        navigate('/');
+      }
     } catch (err) {
       throw new Error(err.error || 'Invalid TOTP code. Please try again.');
     }
   }
 
   //-----------------------------------------------------------------------------
-  // Handle skipping TOTP for pending admin user
+  // Handle skipping TOTP verification
   async function handleSkipTotp() {
-    if (pendingAdminUser) {
-      setUser({ 
-        ...pendingAdminUser, 
-        twofa_enabled: false,
-        limited_access: true,
-        original_admin: true
-      });
+    try {
+      await API.skipTotp();
+      const u = await API.getUserInfo();
+      setUser(u);
       setTotpRequired(false);
       setPendingAdminUser(null);
-      setMessage('Logged in with limited access. Complete 2FA to cancel orders.');
-      setMessageType('warning');
-      setTimeout(() => setMessage(''), 3000);
+      setMessage('');
       navigate('/');
+    } catch (err) {
+      throw new Error(err.error || 'Unable to skip TOTP verification.');
     }
   }
 
@@ -105,6 +106,24 @@ function App() {
     setMessage('');
     navigate('/login');
   }
+
+  //-----------------------------------------------------------------------------
+  // Handle session upgrade request
+  const handleSessionUpgrade = () => {
+    // Store current location to return after upgrade
+    setUpgradeReturnPath(window.location.pathname);
+    setIsUpgradeMode(true);
+    setTotpRequired(true);
+    navigate('/login');
+  };
+
+  //-----------------------------------------------------------------------------
+  // Handle canceling session upgrade
+  const handleCancelUpgrade = () => {
+    setIsUpgradeMode(false);
+    setTotpRequired(false);
+    navigate(upgradeReturnPath);
+  };
 
   //-----------------------------------------------------------------------------
   // Global message handler
@@ -125,12 +144,12 @@ function App() {
       <Container fluid className="p-0">
         <div className="px-3 py-4" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%)' }}>
           <Routes>
-            <Route path="/login" element={<LoginLayout onLogin={handleLogin} totpRequired={totpRequired} onTotp={handleTotp} onSkipTotp={handleSkipTotp} />} />
-            <Route path="/" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} />} />
-            <Route path="/order" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} />}>
+            <Route path="/login" element={<LoginLayout onLogin={handleLogin} totpRequired={totpRequired} onTotp={handleTotp} onSkipTotp={handleSkipTotp} isUpgradeMode={isUpgradeMode} onCancelUpgrade={handleCancelUpgrade} />} />
+            <Route path="/" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} onSessionUpgrade={handleSessionUpgrade} />} />
+            <Route path="/order" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} onSessionUpgrade={handleSessionUpgrade} />}>
               <Route index element={<OrderConfiguratorLayout user={user} showMessage={showMessage} />} />
             </Route>
-            <Route path="/history" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} />}>
+            <Route path="/history" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} onSessionUpgrade={handleSessionUpgrade} />}>
               <Route index element={<OrderHistoryLayout user={user} showMessage={showMessage} />} />
             </Route>
             <Route path="*" element={<NotFoundLayout />} />

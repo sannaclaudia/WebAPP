@@ -18,7 +18,7 @@ function OrderHistoryLayout() {
       }
 
       try {
-        const ordersData = await API.getOrders();
+        const ordersData = await API.getOrderHistory();
         setOrders(ordersData);
       } catch (err) {
         showMessage('Error loading orders: ' + (err.message || 'Unknown error'));
@@ -36,7 +36,8 @@ function OrderHistoryLayout() {
       showMessage('Order cancelled successfully', 'success');
       
       // Reload orders to reflect cancellation
-      const updatedOrders = await API.getOrders();
+      const updatedOrders = await API.getOrderHistory();
+      console.log('Updated orders after cancellation:', updatedOrders); // Debug log
       setOrders(updatedOrders);
     } catch (err) {
       const errorMessage = err.message || err.error || 'Unable to cancel order';

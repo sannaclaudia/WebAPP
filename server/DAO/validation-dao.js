@@ -24,9 +24,9 @@ exports.validateOrder = async (dishId, size, ingredientIds) => {
     }
     
     // Check maximum ingredients for size
-    const maxIngredients = await dishDao.getMaxIngredientsBySize();
-    if (ingredientIds.length > maxIngredients[size]) {
-      errors.push(`Too many ingredients for ${size} size (max ${maxIngredients[size]})`);
+    const maxIngredients = await dishDao.getMaxIngredientsBySize(size);
+    if (ingredientIds.length > maxIngredients) {
+      errors.push(`Too many ingredients for ${size} size (max ${maxIngredients})`);
       return { valid: false, errors };
     }
     
@@ -124,9 +124,9 @@ async function checkIncompatibilities(ingredientIds) {
 // Calculate order total price
 exports.calculateOrderTotal = async (dishId, size, ingredientIds) => {
   try {
-    // Get base price for size
-    const dishPrices = await dishDao.getDishPrices();
-    let total = dishPrices[size] || 0;
+    // Get base price for the specific dish and size
+    const basePrice = await dishDao.getDishPriceBySize(dishId, size);
+    let total = basePrice;
     
     // Add ingredient prices
     for (const ingredientId of ingredientIds) {

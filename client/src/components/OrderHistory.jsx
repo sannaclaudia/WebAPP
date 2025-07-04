@@ -40,13 +40,16 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
       {!canCancel && user && (
         <div className="alert alert-info border-0 shadow-sm mb-4" style={{ borderRadius: '15px' }}>
           <i className="bi bi-info-circle-fill me-2"></i>
-          To cancel orders, you need to authenticate with 2FA when logging in.
+          {user.isSkippedTotp ? 
+            'You skipped 2FA verification. To cancel orders, please log out and log in again with 2FA.' :
+            'To cancel orders, you need to authenticate with 2FA when logging in.'
+          }
         </div>
       )}
 
       <div className="row g-3">
-        {orders.map(order => (
-          <div key={order.id} className="col-12">
+        {orders.map((order, index) => (
+          <div key={`order-${order.id}-${index}`} className="col-12">
             <Card className="border-0 shadow-sm" style={{ borderRadius: '15px' }}>
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-start mb-3">
@@ -74,27 +77,40 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                   </div>
                 </div>
 
-                {/* Order Items */}
+                {/* Order Details */}
                 <div className="mb-3">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="border rounded p-3 mb-2" style={{ background: '#f8fafc' }}>
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div>
-                          <div className="fw-semibold text-capitalize">
-                            {item.dish_name} ({item.size})
-                          </div>
-                          {item.ingredients.length > 0 && (
-                            <div className="small text-muted mt-1">
-                              <strong>Ingredients:</strong> {item.ingredients.join(', ')}
+                  <div className="border rounded p-3" style={{ background: '#f8fafc' }}>
+                    <div className="d-flex justify-content-between align-items-start">
+                      <div className="w-100">
+                        <div className="fw-semibold text-capitalize mb-2">
+                          {order.dish_name} ({order.size})
+                        </div>
+                        
+                        {/* Display ingredients from OrderIngredients and Ingredients tables */}
+                        <div className="small text-muted">
+                          <strong>Ingredients:</strong>
+                          {order.orderIngredients && order.orderIngredients.length > 0 ? (
+                            <div className="mt-2">
+                              {order.orderIngredients.map((orderIngredient, index) => (
+                                <div key={`${orderIngredient.ingredient_id}-${index}`} className="d-flex justify-content-between align-items-center py-1">
+                                  <span>
+                                    {orderIngredient.ingredient_name} x{orderIngredient.quantity || 1}
+                                  </span>
+                                  <span className="text-success fw-semibold">
+                                    €{((orderIngredient.price || 0) * (orderIngredient.quantity || 1)).toFixed(2)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="mt-1 text-muted fst-italic">
+                              No additional ingredients
                             </div>
                           )}
                         </div>
-                        <div className="text-end">
-                          <div className="fw-semibold">€{item.total_price.toFixed(2)}</div>
-                        </div>
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
 
                 {/* Actions */}

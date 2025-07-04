@@ -6,7 +6,7 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
     
     if (ingredient.requires && ingredient.requires.length > 0) {
       constraints.push(
-        <div key="requires" className="small text-info mb-1">
+        <div key={`requires-${ingredient.id}`} className="small text-info mb-1">
           <i className="bi bi-arrow-right-circle me-1"></i>
           Requires: {ingredient.requires.map(r => r.name).join(', ')}
         </div>
@@ -15,7 +15,7 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
     
     if (ingredient.incompatible_with && ingredient.incompatible_with.length > 0) {
       constraints.push(
-        <div key="incompatible" className="small text-warning mb-1">
+        <div key={`incompatible-${ingredient.id}`} className="small text-warning mb-1">
           <i className="bi bi-x-circle me-1"></i>
           Incompatible with: {ingredient.incompatible_with.map(i => i.name).join(', ')}
         </div>
@@ -31,6 +31,34 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
         <i className="bi bi-list-ul me-2"></i>
         Menu & Ingredients
       </h5>
+
+      {/* Base Dishes */}
+      <div className="mb-4">
+        <h6 className="fw-semibold mb-3 text-muted">Base Dishes</h6>
+        <div className="row g-2">
+          {dishes.map(dish => (
+            <div key={dish.id} className="col-12">
+              <Card className="border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                <Card.Body className="p-2">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div className="fw-semibold text-capitalize">{dish.name}</div>
+                      <div className="small text-muted">All sizes available</div>
+                    </div>
+                    <div className="text-end">
+                      <div className="small">
+                        <div>Small: €{pricing.prices?.Small || 5}</div>
+                        <div>Medium: €{pricing.prices?.Medium || 7}</div>
+                        <div>Large: €{pricing.prices?.Large || 9}</div>
+                      </div>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </div>
      
 
       {/* Sizes (replaces Size Multipliers) */}

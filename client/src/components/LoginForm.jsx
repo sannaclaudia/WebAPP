@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 
-function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp }) {
+function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, onCancelUpgrade }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [totpCode, setTotpCode] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,31 +39,44 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp }) {
     } catch (error) {
       // Set appropriate error message based on the type of login
       if (totpRequired) {
-        setErrorMessage('Invalid TOTP code. Please try again.');
+        setError('Invalid TOTP code. Please try again.');
       } else {
-        setErrorMessage('Invalid username or password. Please check your credentials and try again.');
+        setError('Invalid username or password. Please check your credentials and try again.');
       }
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-   const handleUsernameChange = (e) => {
+  const handleSkipTotp = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      await onSkipTotp();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUsernameChange = (e) => {
     setUsername(e.target.value);
-    if (errorMessage) setErrorMessage('');
+    if (error) setError('');
   };
 
   //-----------------------------------------------------------------------------
   // Handle password change
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
-    if (errorMessage) setErrorMessage('');
+    if (error) setError('');
   };
 
   // Handle TOTP code change
   const handleTotpChange = (e) => {
     setTotpCode(e.target.value);
-    if (errorMessage) setErrorMessage('');
+    if (error) setError('');
   };
   
   return (
@@ -71,10 +87,10 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp }) {
           <i className="bi bi-person-fill text-white" style={{ fontSize: '2.5rem' }}></i>
         </div>
         <h3 className="fw-bold" style={{ color: '#1e40af' }}>
-          {totpRequired ? 'Two-Factor Authentication' : 'Welcome Back!'}
+          {isUpgradeMode ? 'Upgrade Session' : totpRequired ? 'Two-Factor Authentication' : 'Welcome Back!'}
         </h3>
         <p className="text-muted">
-          {totpRequired ? 'Please enter your TOTP code' : 'Sign in to your account'}
+          {isUpgradeMode ? 'Enter your TOTP code to upgrade to full access' : totpRequired ? 'Please enter your TOTP code' : 'Sign in to your account'}
         </p>
       </div>
 
@@ -85,7 +101,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp }) {
         </Alert>
       )}
 
-      {!totpRequired ? (
+      {!totpRequired && !isUpgradeMode ? (
         <Form onSubmit={handleLogin}>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold">Username</Form.Label>
@@ -169,29 +185,74 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp }) {
               {loading ? (
                 <>
                   <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                  Verifying...
+                  {isUpgradeMode ? 'Upgrading...' : 'Verifying...'}
                 </>
               ) : (
                 <>
                   <i className="bi bi-shield-check me-2"></i>
-                  Verify Code
+                  {isUpgradeMode ? 'Upgrade Session' : 'Verify Code'}
                 </>
               )}
             </Button>
-
-            <Button 
-              variant="outline-secondary" 
-              onClick={onSkipTotp}
-              className="fw-semibold"
-              style={{ borderRadius: '25px', padding: '12px' }}
-              disabled={loading}
-            >
-              <i className="bi bi-skip-forward me-2"></i>
-              Skip 2FA (Limited Access)
-            </Button>
+            
+            {!isUpgradeMode && (
+              <Button 
+                variant="outline-secondary"
+                onClick={handleSkipTotp}
+                className="fw-bold border-0"
+                style={{ 
+                  borderRadius: '25px',
+                  padding: '12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#6c757d'
+                }}
+                disabled={loading}
+              >
+                <i className="bi bi-skip-forward me-2"></i>
+                Skip 2FA (Limited Access)
+              </Button>
+            )}
+            
+            {isUpgradeMode && (
+              <Button 
+                variant="outline-secondary"
+                onClick={onCancelUpgrade || (() => window.history.back())}
+                className="fw-bold border-0"
+                style={{ 
+                  borderRadius: '25px',
+                  padding: '12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: '#6c757d'
+                }}
+                disabled={loading}
+              >
+                <i className="bi bi-arrow-left me-2"></i>
+                Cancel
+              </Button>
+            )}
           </div>
         </Form>
       )}
+      
+      {/* Back to Main Page Button */}
+      <div className="text-center mt-4">
+        <Button 
+          variant="outline-light"
+          onClick={() => navigate('/')}
+          size="sm"
+          className="fw-bold border-0"
+          style={{ 
+            borderRadius: '20px',
+            padding: '8px 16px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            color: '#6c757d'
+          }}
+          disabled={loading}
+        >
+          <i className="bi bi-house me-1"></i>
+          Back to Main Page
+        </Button>
+      </div>
     </div>
   );
 }

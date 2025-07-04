@@ -215,3 +215,73 @@ exports.updateIngredientAvailability = (ingredientIds) => {
   });
 };
 
+//--------------------------------------------------------------------------
+// Get multiple ingredients by IDs with their constraints
+exports.getIngredientsByIds = (ingredientIds) => {
+  return new Promise((resolve, reject) => {
+    if (ingredientIds.length === 0) {
+      resolve([]);
+      return;
+    }
+    
+    const placeholders = ingredientIds.map(() => '?').join(',');
+    const sql = `SELECT * FROM Ingredients WHERE id IN (${placeholders})`;
+    
+    db.all(sql, ingredientIds, async (err, rows) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      try {
+        // For each ingredient, get its incompatibilities and requirements
+        const ingredients = [];
+        for (let ingredient of rows) {
+          // Get incompatibilities
+          const incompatibilities = await new Promise((resolve, reject) => {
+            const incompatibilityQuery = `
+              SELECT i.id, i.name
+              FROM IngredientIncompatibilities ii
+              JOIN Ingredients i ON ii.incompatible_with_id = i.id
+              WHERE ii.ingredient_id = ?
+              UNION
+              SELECT i.id, i.name
+              FROM IngredientIncompatibilities ii
+              JOIN Ingredients i ON ii.ingredient_id = i.id
+              WHERE ii.incompatible_with_id = ?
+            `;
+            db.all(incompatibilityQuery, [ingredient.id, ingredient.id], (err, incompatibles) => {
+              if (err) reject(err);
+              else resolve(incompatibles);
+            });
+          });
+          
+          // Get requirements
+          const requirements = await new Promise((resolve, reject) => {
+            const requirementQuery = `
+              SELECT i.id, i.name
+              FROM IngredientRequirements ir
+              JOIN Ingredients i ON ir.required_ingredient_id = i.id
+              WHERE ir.ingredient_id = ?
+            `;
+            db.all(requirementQuery, [ingredient.id], (err, requirements) => {
+              if (err) reject(err);
+              else resolve(requirements);
+            });
+          });
+          
+          ingredients.push({
+            ...ingredient,
+            incompatible_with: incompatibilities,
+            requires: requirements
+          });
+        }
+        
+        resolve(ingredients);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+};
+

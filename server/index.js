@@ -36,7 +36,7 @@ app.use(express.json());
 
 // Enable CORS for the frontend communication
 const corsOptions = {
-  origin: 'http://127.0.0.1:5173',
+  origin: 'http://localhost:5173',
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -89,9 +89,9 @@ function clientUserInfo(req) {
   return {
     id: user.id,
     username: user.username,
-    twofa_enabled: user.twofa_enabled,
-    canDoTotp: user.twofa_enabled,
-    isTotp: req.session.secondFactor === 'totp' || false
+    canDoTotp: true,
+    isTotp: req.session.secondFactor === 'totp' || false,
+    isSkippedTotp: req.session.secondFactor === 'skipped' || false
   };
 }
 
@@ -108,36 +108,23 @@ app.post('/api/sessions', function(req, res, next) {
     req.login(user, function(err) {
       if (err) return next(err);
 
-      // If user has 2FA enabled, require TOTP
-      if (user.twofa_enabled) {
-        req.session.secondFactor = 'pending';
-        return res.json({
-          ...clientUserInfo(req),
-          canDoTotp: true,
-          isTotp: false
-        });
-      } else {
-        req.session.secondFactor = 'basic';
-        return res.json({
-          ...clientUserInfo(req),
-          canDoTotp: false,
-          isTotp: false
-        });
-      }
+      // All users now require TOTP
+      req.session.secondFactor = 'pending';
+      return res.json({
+        ...clientUserInfo(req),
+        canDoTotp: true,
+        isTotp: false
+      });
     });
   })(req, res, next);
 });
 
 //----------------------------------------------------------------------------
-// TOTP verification (2FA)
+// TOTP verification (2FA) - handles both initial login and session upgrades
 app.post('/api/login-totp', isLoggedIn, async function(req, res) {
   try {
     const { code } = req.body;
     
-    if (!req.user.twofa_enabled) {
-      return res.status(400).json({ error: 'TOTP not enabled for this user' });
-    }
-
     const secret = await userDao.getTotpSecret(req.user.id);
     if (!secret) {
       return res.status(400).json({ error: 'No TOTP secret found' });
@@ -159,6 +146,18 @@ app.post('/api/login-totp', isLoggedIn, async function(req, res) {
 
   } catch (err) {
     console.error('TOTP verification error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+//----------------------------------------------------------------------------
+// Skip TOTP verification (user can log in but won't be able to cancel orders)
+app.post('/api/skip-totp', isLoggedIn, async function(req, res) {
+  try {
+    req.session.secondFactor = 'skipped';
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Skip TOTP error:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -212,8 +211,7 @@ app.get('/api/ingredients', async (req, res) => {
 // Get dish prices and size constraints (public)
 app.get('/api/pricing', async (req, res) => {
   try {
-    const prices = await dishDao.getDishPrices();
-    const maxIngredients = await dishDao.getMaxIngredientsBySize();
+    const { prices, maxIngredients } = await dishDao.getDishPricing();
     res.json({ prices, maxIngredients });
   } catch (err) {
     console.error('Error getting pricing:', err);
@@ -250,6 +248,48 @@ app.post('/api/validate-order', isLoggedIn, [
 });
 
 //----------------------------------------------------------------------------
+// GET /api/orders - Get user's order history with full details
+app.get('/api/orders', isLoggedIn, async (req, res) => {
+  try {
+    const orders = await orderDao.getUserOrders(req.user.id);
+    res.json(orders);
+  } catch (error) {
+    console.error('Error getting order history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//----------------------------------------------------------------------------
+// GET /api/orders/history - Alias for order history (for clarity)
+app.get('/api/orders/history', isLoggedIn, async (req, res) => {
+  try {
+    const orders = await orderDao.getUserOrdersWithIngredients(req.user.id);
+    res.json(orders);
+  } catch (error) {
+    console.error('Error getting order history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//----------------------------------------------------------------------------
+// DELETE /api/orders/:id - Cancel an order (requires 2FA)
+app.delete('/api/orders/:id', isLoggedIn, async (req, res) => {
+  try {
+    // Check if user authenticated with 2FA
+    if (req.session.secondFactor !== 'totp') {
+      return res.status(403).json({ error: 'Order cancellation requires 2FA authentication' });
+    }
+
+    const orderId = parseInt(req.params.id);
+    await orderDao.cancelOrder(orderId, req.user.id);
+    res.json({ success: true, message: 'Order cancelled successfully' });
+  } catch (error) {
+    console.error('Error cancelling order:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//----------------------------------------------------------------------------
 // POST /api/orders - Submit a new order
 app.post('/api/orders', isLoggedIn, async (req, res) => {
   try {
@@ -258,6 +298,27 @@ app.post('/api/orders', isLoggedIn, async (req, res) => {
     const size = req.body.size;
     const ingredients = req.body.ingredients || req.body.ingredientIds || [];
     const user_id = req.user.id;
+    
+    // Validate required fields
+    if (!dish_id) {
+      return res.status(400).json({ error: 'Dish ID is required' });
+    }
+    
+    if (!size) {
+      return res.status(400).json({ error: 'Size is required' });
+    }
+    
+    // Count ingredient quantities
+    const ingredientCounts = {};
+    ingredients.forEach(id => {
+      ingredientCounts[id] = (ingredientCounts[id] || 0) + 1;
+    });
+    
+    // Convert to array of {id, quantity} objects
+    const ingredientsWithQuantity = Object.entries(ingredientCounts).map(([id, quantity]) => ({
+      id: parseInt(id),
+      quantity
+    }));
     
     // Direct validation using db object
     const validationResult = await validateOrderDirectly(dish_id, size, ingredients);
@@ -270,9 +331,9 @@ app.post('/api/orders', isLoggedIn, async (req, res) => {
       user_id,
       dish_id,
       size,
-      ingredients,
+      ingredients: ingredientsWithQuantity,
       total_price: validationResult.totalPrice,
-      used_2fa: req.user.isTotp || false
+      used_2fa: req.session.secondFactor === 'totp'
     });
     
     res.status(201).json(order);
@@ -288,141 +349,88 @@ async function validateOrderDirectly(dishId, size, ingredientIds) {
   const errors = [];
   let totalPrice = 0;
   
-  // Validate dish exists
-  const dishQuery = 'SELECT * FROM Dishes WHERE id = ?';
-  const dish = await new Promise((resolve, reject) => {
-    db.get(dishQuery, [dishId], (err, row) => {
-      if (err) reject(err);
-      resolve(row);
-    });
-  });
-  
-  if (!dish) {
-    errors.push(`Invalid dish ID: ${dishId}`);
-  }
-  
-  // Validate size and get pricing
-  // Hardcoded pricing and max ingredient limits since 'pricing' table does not exist
-  const prices = {
-    Small: 5,
-    Medium: 7,
-    Large: 9
-  };
-  const maxIngredientsBySize = {
-    Small: 3,
-    Medium: 5,
-    Large: 7
-  };
-
-  if (!prices[size]) {
-    errors.push(`Invalid size: ${size}`);
-  } else {
-    totalPrice += prices[size];
-  }
-
-  // Check ingredient limit for selected size
-  const maxIngredients = maxIngredientsBySize[size] || 0;
-  if (ingredientIds.length > maxIngredients) {
-    errors.push(`Too many ingredients for ${size} size. Maximum allowed: ${maxIngredients}`);
-  }
-  
-  // Get all ingredients with their availability
-  const ingredientPlaceholders = ingredientIds.map(() => '?').join(',');
-  const ingredientsQuery = `SELECT * FROM Ingredients WHERE id IN (${ingredientIds.length ? ingredientPlaceholders : 'NULL'})`;
-  
-  const ingredients = await new Promise((resolve, reject) => {
-    db.all(ingredientsQuery, ingredientIds, async (err, rows) => {
-      if (err) reject(err);
-      
-      // For each ingredient, get its incompatibilities and requirements
-      for (let ingredient of rows) {
-        // Get incompatibilities
-        ingredient.incompatible_with = await new Promise((resolve, reject) => {
-          db.all(`
-            SELECT i.id, i.name
-            FROM IngredientIncompatibilities ii
-            JOIN Ingredients i ON ii.incompatible_with_id = i.id
-            WHERE ii.ingredient_id = ?
-          `, [ingredient.id], (err, incompatibles) => {
-            if (err) reject(err);
-            resolve(incompatibles);
-          });
-        });
-        
-        // Get requirements
-        ingredient.requires = await new Promise((resolve, reject) => {
-          db.all(`
-            SELECT i.id, i.name
-            FROM IngredientRequirements ir
-            JOIN Ingredients i ON ir.required_ingredient_id = i.id
-            WHERE ir.ingredient_id = ?
-          `, [ingredient.id], (err, requirements) => {
-            if (err) reject(err);
-            resolve(requirements);
-          });
-        });
-      }
-      
-      resolve(rows);
-    });
-  });
-  
-  // Check for invalid ingredients
-  const availableIngredientIds = ingredients.map(ing => ing.id);
-  const invalidIngredientIds = ingredientIds.filter(id => !availableIngredientIds.includes(id));
-  if (invalidIngredientIds.length > 0) {
-    errors.push(`Invalid ingredient IDs: ${invalidIngredientIds.join(', ')}`);
-  }
-  
-  // Count ingredients and check availability
-  const ingredientCounts = {};
-  ingredientIds.forEach(id => {
-    ingredientCounts[id] = (ingredientCounts[id] || 0) + 1;
-  });
-  
-  for (const ingredient of ingredients) {
-    const requestedCount = ingredientCounts[ingredient.id] || 0;
+  try {
+    // Validate dish exists
+    const dish = await dishDao.getDishById(dishId);
+    if (!dish) {
+      errors.push(`Invalid dish ID: ${dishId}`);
+    }
     
-    // Check if ingredient has limited availability
-    if (ingredient.available_portions !== null) {
-      if (ingredient.available_portions < requestedCount) {
-        errors.push(`Not enough ${ingredient.name} available. Requested: ${requestedCount}, Available: ${ingredient.available_portions}`);
+    // Validate size and get pricing from DishPricing table
+    const pricingInfo = await dishDao.getDishPricingInfo(dishId, size);
+    if (!pricingInfo) {
+      errors.push(`Invalid size: ${size}`);
+    } else {
+      totalPrice += pricingInfo.base_price;
+      
+      // Check ingredient limit for selected size
+      if (ingredientIds.length > pricingInfo.max_ingredients) {
+        errors.push(`Too many ingredients for ${size} size. Maximum allowed: ${pricingInfo.max_ingredients}`);
       }
     }
     
-    // Add ingredient price to total
-    totalPrice += ingredient.price * requestedCount;
-  }
-  
-  // Check ingredient incompatibilities
-  for (const ingredient of ingredients) {
-    if (ingredient.incompatible_with && ingredient.incompatible_with.length > 0) {
-      const incompatibleSelected = ingredient.incompatible_with
-        .filter(incomp => ingredientIds.includes(incomp.id));
-        
-      if (incompatibleSelected.length > 0) {
-        errors.push(`${ingredient.name} is incompatible with ${incompatibleSelected.map(i => i.name).join(', ')}`);
+    // Get all ingredients with their availability and constraints
+    const ingredients = await ingredientDao.getIngredientsByIds(ingredientIds);
+    
+    // Check for invalid ingredients
+    const availableIngredientIds = ingredients.map(ing => ing.id);
+    const invalidIngredientIds = ingredientIds.filter(id => !availableIngredientIds.includes(id));
+    if (invalidIngredientIds.length > 0) {
+      errors.push(`Invalid ingredient IDs: ${invalidIngredientIds.join(', ')}`);
+    }
+    
+    // Count ingredients and check availability
+    const ingredientCounts = {};
+    ingredientIds.forEach(id => {
+      ingredientCounts[id] = (ingredientCounts[id] || 0) + 1;
+    });
+    
+    // Check availability for each ingredient
+    for (const ingredient of ingredients) {
+      const requestedQuantity = ingredientCounts[ingredient.id];
+      if (ingredient.available_portions !== null && requestedQuantity > ingredient.available_portions) {
+        errors.push(`Not enough ${ingredient.name} available (requested: ${requestedQuantity}, available: ${ingredient.available_portions})`);
+      }
+      
+      // Add ingredient price to total
+      totalPrice += ingredient.price * requestedQuantity;
+    }
+    
+    // Check requirements and incompatibilities
+    const uniqueIngredientIds = Object.keys(ingredientCounts).map(id => parseInt(id));
+    
+    // Check requirements
+    for (const ingredient of ingredients) {
+      for (const requirement of ingredient.requires) {
+        if (!uniqueIngredientIds.includes(requirement.id)) {
+          errors.push(`${ingredient.name} requires ${requirement.name} to be selected`);
+        }
       }
     }
-  }
-  
-  // Check ingredient requirements
-  for (const ingredient of ingredients) {
-    if (ingredient.requires && ingredient.requires.length > 0) {
-      const missingRequirements = ingredient.requires
-        .filter(req => !ingredientIds.includes(req.id));
-        
-      if (missingRequirements.length > 0) {
-        errors.push(`${ingredient.name} requires ${missingRequirements.map(r => r.name).join(', ')}`);
+    
+    // Check incompatibilities
+    for (const ingredient of ingredients) {
+      for (const incompatible of ingredient.incompatible_with) {
+        if (uniqueIngredientIds.includes(incompatible.id)) {
+          errors.push(`${ingredient.name} is incompatible with ${incompatible.name}`);
+        }
       }
     }
+    
+    return {
+      valid: errors.length === 0,
+      errors,
+      totalPrice: Math.round(totalPrice * 100) / 100
+    };
+    
+  } catch (error) {
+    console.error('Validation error:', error);
+    return {
+      valid: false,
+      errors: ['Internal validation error'],
+      totalPrice: 0
+    };
   }
-  
-  return {
-    valid: errors.length === 0,
-    errors,
-    totalPrice
-  };
 }
 
 //----------------------------------------------------------------------------

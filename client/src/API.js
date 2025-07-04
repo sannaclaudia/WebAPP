@@ -2,7 +2,7 @@ import dayjs from 'dayjs';
 
 const SERVER_URL = 'http://localhost:3001/api/';
 
-//----------------------------------------------------------------------------
+
 /**
  * Utility function for parsing the HTTP response.
  */
@@ -71,7 +71,6 @@ const validateOrder = async (orderData) => {
 //----------------------------------------------------------------------------
 // Submit order
 const submitOrder = async (orderData) => {
-  console.log('API submitOrder called with data:', orderData);
   try {
     const response = await fetch(SERVER_URL + 'orders', {
       method: 'POST',
@@ -108,20 +107,46 @@ const submitOrder = async (orderData) => {
 //----------------------------------------------------------------------------
 // Get user's orders
 const getOrders = async () => {
-  return getJson(
-    fetch(SERVER_URL + 'orders', { credentials: 'include' })
-  );
+  const response = await fetch(SERVER_URL + 'orders', {
+    credentials: 'include'
+  });
+  
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const errDetail = await response.json();
+    throw errDetail;
+  }
+};
+
+//----------------------------------------------------------------------------
+// Get order history
+const getOrderHistory = async () => {
+  const response = await fetch(SERVER_URL + 'orders/history', {
+    credentials: 'include',
+  });
+  const orders = await response.json();
+  if (response.ok) {
+    return orders;
+  } else {
+    throw new Error(orders.error || 'Failed to fetch order history');
+  }
 };
 
 //----------------------------------------------------------------------------
 // Cancel order
 const cancelOrder = async (orderId) => {
-  return getJson(
-    fetch(SERVER_URL + `orders/${orderId}`, {
-      method: 'DELETE',
-      credentials: 'include'
-    })
-  );
+  const response = await fetch(SERVER_URL + `orders/${orderId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+  
+  if (response.ok) {
+    return await response.json();
+  } else {
+    const errDetail = await response.json();
+    throw errDetail;
+  }
 };
 
 //############################################################################
@@ -175,6 +200,18 @@ const getUserInfo = async () => {
 };
 
 //----------------------------------------------------------------------------
+// Skip TOTP verification (user can log in but won't be able to cancel orders)
+const skipTotp = async () => {
+  return getJson(
+    fetch(SERVER_URL + 'skip-totp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include'
+    })
+  );
+};
+
+//----------------------------------------------------------------------------
 // Export all API functions
 const API = {
   getDishes,
@@ -183,9 +220,11 @@ const API = {
   validateOrder,
   submitOrder,
   getOrders,
+  getOrderHistory,
   cancelOrder,
   logIn,
   logInTotp,
+  skipTotp,
   logOut,
   getUserInfo,
 };

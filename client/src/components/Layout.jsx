@@ -42,7 +42,7 @@ function NotFoundLayout() {
 
 //------------------------------------------------------------------------
 // --- Login Layout ---
-function LoginLayout({ onLogin, totpRequired, onTotp, onSkipTotp }) {
+function LoginLayout({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, onCancelUpgrade }) {
   return (
     <Row className="justify-content-center">
       <Col>
@@ -51,8 +51,10 @@ function LoginLayout({ onLogin, totpRequired, onTotp, onSkipTotp }) {
             <LoginForm 
               onLogin={onLogin} 
               totpRequired={totpRequired} 
-              onTotp={onTotp}
-              onSkipTotp={onSkipTotp}
+              onTotp={onTotp} 
+              onSkipTotp={onSkipTotp} 
+              isUpgradeMode={isUpgradeMode}
+              onCancelUpgrade={onCancelUpgrade}
             />
           </div>
         </div>
@@ -61,7 +63,9 @@ function LoginLayout({ onLogin, totpRequired, onTotp, onSkipTotp }) {
   );
 }
 
-function RestaurantLayout({ user, message, messageType = 'danger', onLogout, showMessage }) {
+//------------------------------------------------------------------------
+// --- Restaurant Layout ---
+function RestaurantLayout({ user, message, messageType = 'danger', onLogout, showMessage, onSessionUpgrade }) {
 
   // ###########################################################################
   // STATE MANAGEMENT
@@ -74,7 +78,7 @@ function RestaurantLayout({ user, message, messageType = 'danger', onLogout, sho
     <div className="p-2 p-md-3">
       <Row>
         <Col>
-          <NavigationBar user={user} onLogout={onLogout} />
+          <NavigationBar user={user} onLogout={onLogout} onSessionUpgrade={onSessionUpgrade} />
         </Col>
       </Row>
 
@@ -111,8 +115,13 @@ function WelcomeLayout({ user }) {
   const [ingredients, setIngredients] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Define pricing structure directly instead of fetching it
-  const [pricing] = useState({
+  // Pricing state - will be loaded from server
+  const [pricing, setPricing] = useState({
+    prices: {
+      'Small': 5,
+      'Medium': 7,
+      'Large': 9
+    },
     maxIngredients: {
       'Small': 3,
       'Medium': 5,
@@ -123,13 +132,15 @@ function WelcomeLayout({ user }) {
   useEffect(() => {
     const loadMenuData = async () => {
       try {
-        const [dishesData, ingredientsData] = await Promise.all([
+        const [dishesData, ingredientsData, pricingData] = await Promise.all([
           API.getDishes(),
-          API.getIngredients()
+          API.getIngredients(),
+          API.getPricing()
         ]);
         
         setDishes(dishesData);
         setIngredients(ingredientsData);
+        setPricing(pricingData);
       } catch (err) {
         console.error('Error loading menu data:', err);
       } finally {
@@ -159,14 +170,22 @@ function WelcomeLayout({ user }) {
                 Hello <strong>{user.username}</strong>! Ready to create your perfect meal?
               </p>
               <div className="d-flex gap-2 gap-md-3 justify-content-center flex-column flex-sm-row">
-                <a href="/order" className="btn btn-primary btn-lg" style={{ borderRadius: '25px' }}>
-                  <i className="bi bi-cart-plus me-2"></i>
-                  Create New Order
-                </a>
-                <a href="/history" className="btn btn-outline-primary btn-lg" style={{ borderRadius: '25px' }}>
-                  <i className="bi bi-clock-history me-2"></i>
+                <Link
+                  to={{
+                    pathname: "/order"
+                  }}
+                  className="btn btn-outline-primary btn-lg" style={{ borderRadius: '25px' }}
+                ><i className="bi bi-cart-plus me-2"></i>
+                  Create New Order 
+                </Link>
+                <Link
+                  to={{
+                    pathname: "/history"
+                  }}
+                  className="btn btn-outline-primary btn-lg" style={{ borderRadius: '25px' }}
+                > <i className="bi bi-clock-history me-2"></i>
                   View Order History
-                </a>
+                </Link>
               </div>
             </div>
           ) : (
