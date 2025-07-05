@@ -27,13 +27,47 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
 
   return (
     <div className="p-4">
-      <h5 className="fw-bold mb-3" style={{ color: '#ffffff' }}>
-        <i className="bi bi-list-ul me-2"></i>
-        Available Ingredients
-      </h5>
+      {/* Base Dishes */}
+      <div className="mb-4">
+        <h5 className="fw-bold mb-3" style={{ color: '#ffffff' }}>
+          <i className="bi bi-grid me-2"></i>
+          Base Dishes
+        </h5>
+        
+        <div className="row g-2">
+          {dishes.map(dish => (
+            <div key={dish.id} className="col-12">
+              <Card className="border-0 shadow-sm" style={{ borderRadius: '8px' }}>
+                <Card.Body className="p-2">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div>
+                      <div className="fw-semibold text-capitalize">{dish.name}</div>
+                    </div>
+                    <div className="text-end">
+                      <div className="d-flex flex-column gap-1">
+                        {pricing.prices && Object.entries(pricing.prices).map(([size, price]) => (
+                          <div key={size} className="d-flex justify-content-between align-items-center">
+                            <Badge bg="secondary" className="small me-2">{size}</Badge>
+                            <span className="small text-muted">€{price.toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Ingredients */}
       <div>
+        <h5 className="fw-bold mb-3" style={{ color: '#ffffff' }}>
+          <i className="bi bi-list-ul me-2"></i>
+          Available Ingredients
+        </h5>
+        
         <div className="row g-2">
           {ingredients.map(ingredient => (
             <div key={ingredient.id} className="col-12">

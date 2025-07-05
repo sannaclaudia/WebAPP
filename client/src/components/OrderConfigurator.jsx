@@ -1,5 +1,4 @@
-import { Form, Button, Card, Badge, Alert } from 'react-bootstrap';
-import API from '../API';
+import { Form, Button, Card, Badge } from 'react-bootstrap';
 
 function OrderConfigurator({ 
   user, dishes, ingredients, pricing, 
@@ -207,21 +206,6 @@ function OrderConfigurator({
     }).filter(item => item.ingredient);
   };
 
-  const handleSubmitOrder = async () => {
-    if (!selectedDish) {
-      showMessage('Please select a dish', 'warning');
-      return;
-    }
-
-    try {
-      // Use the onSubmitOrder prop which handles all the logic
-      await onSubmitOrder();
-    } catch (err) {
-      // Let the parent handle the error, just log it here
-      console.error('Error in OrderConfigurator:', err);
-    }
-  };
-
   return (
     <div>
       {/* Header with total price in top right */}
@@ -411,6 +395,11 @@ function OrderConfigurator({
               <span>€{(ingredient.price * quantity).toFixed(2)}</span>
             </div>
           ))}
+          <hr className="my-2" />
+          <div className="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span>€{calculateTotal().toFixed(2)}</span>
+          </div>
         </Card.Body>
       </Card>
 

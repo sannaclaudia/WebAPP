@@ -1,5 +1,4 @@
 'use strict';
-const sqlite = require('sqlite3');
 
 // This file sets up an Express server with Passport.js for authentication,
 const express = require('express');
@@ -17,10 +16,6 @@ const dishDao = require('./DAO/dish-dao');
 const ingredientDao = require('./DAO/ingredient-dao');
 const orderDao = require('./DAO/order-dao');
 const validationDao = require('./DAO/validation-dao');
-
-const db = new sqlite.Database('./Database/restaurant.sqlite', (err) => {
-  if (err) throw err;
-});
 
 const { validationResult, body } = require('express-validator');
 
@@ -216,34 +211,6 @@ app.get('/api/pricing', async (req, res) => {
   } catch (err) {
     console.error('Error getting pricing:', err);
     res.status(500).json({ error: 'Database error' });
-  }
-});
-
-//----------------------------------------------------------------------------
-// Validate order configuration (authenticated users only)
-app.post('/api/validate-order', isLoggedIn, [
-  body('dishId').isInt({ min: 1 }).withMessage('Valid dish ID is required'),
-  body('size').isIn(['Small', 'Medium', 'Large']).withMessage('Valid size is required'),
-  body('ingredientIds').isArray().withMessage('Ingredient IDs must be an array')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array() });
-  }
-
-  try {
-    const { dishId, size, ingredientIds } = req.body;
-    const validation = await validationDao.validateOrder(dishId, size, ingredientIds);
-    
-    if (validation.valid) {
-      const total = await validationDao.calculateOrderTotal(dishId, size, ingredientIds);
-      res.json({ valid: true, total });
-    } else {
-      res.json(validation);
-    }
-  } catch (err) {
-    console.error('Error validating order:', err);
-    res.status(500).json({ error: 'Validation error' });
   }
 });
 

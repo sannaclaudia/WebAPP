@@ -14,7 +14,6 @@ CREATE TABLE Orders (
   dish_id INTEGER NOT NULL,
   size VARCHAR(10) NOT NULL,
   total_price DECIMAL(10,2) NOT NULL,
-  status VARCHAR(20) DEFAULT 'confirmed',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   used_2fa BOOLEAN DEFAULT FALSE,
   FOREIGN KEY (user_id) REFERENCES Users(id),
@@ -170,22 +169,22 @@ INSERT INTO Users (username, password_hash, salt, totp_secret) VALUES
 
 -- Insert sample orders
 -- Alice's orders (user_id = 1)
-INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
-  (1, 1, 'Small',7.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
-  (1, 3, 'Small',6.5 ,'confirmed', 1, '2024-12-21 14:15:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at) VALUES 
+  (1, 1, 'Small',7.2 , 1, '2024-12-20 10:30:00'),
+  (1, 3, 'Small',6.5 , 1, '2024-12-21 14:15:00');
 
-INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
-  (1, 2, 'Large',11.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
-  (1, 3, 'Small',6.6 ,'confirmed', 1, '2024-12-21 14:15:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at) VALUES 
+  (1, 2, 'Large',11.2 , 1, '2024-12-20 10:30:00'),
+  (1, 3, 'Small',6.6 , 1, '2024-12-21 14:15:00');
 
 -- Bob's order (user_id = 2)
-INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
-  (2, 2, 'Medium',9.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
-  (2, 3, 'Small',8.7,'confirmed', 1, '2024-12-21 14:15:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at) VALUES 
+  (2, 2, 'Medium',9.2 , 1, '2024-12-20 10:30:00'),
+  (2, 3, 'Small',8.7, 1, '2024-12-21 14:15:00');
 
-INSERT INTO Orders (user_id, dish_id, size, total_price, status, used_2fa, created_at) VALUES 
-  (2, 1, 'Medium',9.2 ,'confirmed', 1, '2024-12-20 10:30:00'),
-  (2, 3, 'Small',6.9,'confirmed', 1, '2024-12-21 14:15:00');
+INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at) VALUES 
+  (2, 1, 'Medium',9.2 , 1, '2024-12-20 10:30:00'),
+  (2, 3, 'Small',6.9, 1, '2024-12-21 14:15:00');
 
 -- Sample ingredients for orders (adjust availability accordingly)
 -- Alice's first order ingredients

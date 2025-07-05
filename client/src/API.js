@@ -1,5 +1,3 @@
-import dayjs from 'dayjs';
-
 const SERVER_URL = 'http://localhost:3001/api/';
 
 
@@ -52,19 +50,6 @@ const getIngredients = async () => {
 const getPricing = async () => {
   return getJson(
     fetch(SERVER_URL + 'pricing', { credentials: 'include' })
-  );
-};
-
-//----------------------------------------------------------------------------
-// Validate order configuration
-const validateOrder = async (orderData) => {
-  return getJson(
-    fetch(SERVER_URL + 'validate-order', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify(orderData)
-    })
   );
 };
 
@@ -217,7 +202,6 @@ const API = {
   getDishes,
   getIngredients,
   getPricing,
-  validateOrder,
   submitOrder,
   getOrders,
   getOrderHistory,

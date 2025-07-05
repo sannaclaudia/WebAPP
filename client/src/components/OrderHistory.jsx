@@ -133,10 +133,10 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                   </div>
                   <div className="text-end">
                     <Badge 
-                      bg={order.status === 'confirmed' ? 'success' : 'secondary'}
+                      bg="success"
                       className="mb-2"
                     >
-                      {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                      Active
                     </Badge>
                     <div className="fw-bold text-primary">
                       €{order.total_price.toFixed(2)}
@@ -181,7 +181,7 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                 </div>
 
                 {/* Actions */}
-                {order.status === 'confirmed' && canCancel && (
+                {canCancel && (
                   <div className="d-flex justify-content-end">
                     <Button
                       size="sm"
@@ -199,7 +199,7 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                   </div>
                 )}
 
-                {order.status === 'confirmed' && !canCancel && user && (
+                {!canCancel && user && (
                   <div className="text-muted small text-end">
                     <i className="bi bi-info-circle me-1"></i>
                     2FA required to cancel orders

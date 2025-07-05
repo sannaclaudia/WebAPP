@@ -19,7 +19,6 @@ import Container from 'react-bootstrap/Container';
 function App() {
   const [user, setUser] = useState(null);
   const [totpRequired, setTotpRequired] = useState(false);
-  const [pendingAdminUser, setPendingAdminUser] = useState(null);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('danger');
   const [isUpgradeMode, setIsUpgradeMode] = useState(false);
@@ -43,13 +42,11 @@ function App() {
       const res = await API.logIn(credentials);
       // Since all users require TOTP now, we always require TOTP verification
       setTotpRequired(true);
-      setPendingAdminUser(res);
       setUser(null);
       setMessage('');
     } catch (err) {
       setUser(null);
       setTotpRequired(false);
-      setPendingAdminUser(null);
       setMessage('');
       throw new Error(err.error || 'Login failed. Please check your credentials.');
     }
@@ -63,7 +60,6 @@ function App() {
       const u = await API.getUserInfo();
       setUser(u);
       setTotpRequired(false);
-      setPendingAdminUser(null);
       setIsUpgradeMode(false);
       setMessage('');
       
@@ -88,7 +84,6 @@ function App() {
       const u = await API.getUserInfo();
       setUser(u);
       setTotpRequired(false);
-      setPendingAdminUser(null);
       setMessage('');
       navigate('/');
     } catch (err) {
@@ -102,7 +97,6 @@ function App() {
     await API.logOut();
     setUser(null);
     setTotpRequired(false);
-    setPendingAdminUser(null);
     setMessage('');
     navigate('/login');
   }

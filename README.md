@@ -1,12 +1,8 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/xnU44QZi)
-# Exam #1234: "Exam Title"
-## Student: s123456 LASTNAME FIRSTNAME 
+# Exam #2: "Restaurant"
+## Student: s343470 SANNA CLAUDIA 
 
-# Restaurant Order Management System
-
-A web application that allows users to configure personalized food orders from a restaurant menu with ingredient constraints and 2FA authentication.
-
-## Server-side
+## 1. Server-side
 
 ### HTTP APIs
 
@@ -24,44 +20,47 @@ A web application that allows users to configure personalized food orders from a
 
 ### Database Tables
 
-- **Users** - User accounts (id, username, password_hash, salt, totp_secret, twofa_enabled)
+- **Users** - User accounts (id, username, password_hash, salt, totp_secret)
 - **Dishes** - Base dishes (id, name) - pizza, pasta, salad
 - **Ingredients** - Available ingredients (id, name, price, available_portions)
 - **IngredientRequirements** - Ingredient dependencies (ingredient_id, required_ingredient_id)
 - **IngredientIncompatibilities** - Ingredient conflicts (ingredient_id, incompatible_with_id)
-- **Orders** - Customer orders (id, user_id, status, used_2fa, created_at)
-- **OrderItems** - Dishes in orders (id, order_id, dish_id, size)
-- **OrderIngredients** - Ingredients per order item (order_item_id, ingredient_id)
+- **Orders** - Customer orders (id, user_id, dish_id, size, total_price, created_at, used_2fa)
+- **DishPricing** - Stores pricing and size constraints for each dish (dish_id, size, base_price, max_ingredients)
+- **OrderIngredients** - Ingredients per order item (order_item_id, ingredient_id, quantity)
 
-## Client-side
+## 2. Client-side
 
 ### Routes
 
-- **/** - Homepage with welcome and navigation
-- **/login** - User authentication with optional 2FA
-- **/order** - Order configuration page with ingredients and constraints
-- **/history** - User's order history with cancellation (if 2FA)
+- `/` - Main welcome page with navigation to login or browse menu.
+- `/login` - Authentication page with username/password and optional TOTP.
+- `/order` - Order configuration page with ingredient selection and constraints.
+- `/history` - User's order history with cancellation options (requires 2FA).
+- `*` - 404 Not Found page for invalid routes.
 
-### React Components
+### Main React Components
 
-- **App** - Main application with routing and authentication state
-- **RestaurantLayout** - Main layout with navigation and messaging
-- **LoginForm** - Login form with TOTP support
-- **NavigationBar** - Top navigation with user status
-- **MenuBrowser** - Ingredient list with constraints (left panel)
-- **OrderConfigurator** - Order configuration form (right panel)
-- **OrderHistory** - Past orders display with cancellation
+- `App` - Root component managing authentication state and routing.
+- `Layout` - Main layout with navigation bar and content area.
+- `LoginForm` - Authentication form with regular login and TOTP support.
+- `NavigationBar` - Fixed navigation with user info and login/logout.
+- `MenuBrowser` - Panel displaying dishes and ingredients with constraints.
+- `OrderConfigurator` - Panel for order creation with real-time validation.
+- `OrderHistory` - Order management interface with cancellation functionality.
 
-## Screenshots
+## 3. Overall
+
+### Screenshots
 
 ![Order Configuration Page](./screenshot-order-config.png)
 
 ## User Accounts
 
-- **alice** / password (2FA enabled)
-- **bob** / password (2FA enabled)  
-- **charlie** / password (no 2FA)
-- **diana** / password (no 2FA)
+- **Username**: alice | **Password**: `pwd` 
+- **Username**: bob | **Password**: `pwd`  
+- **Username**: charlie | **Password**: `pwd` 
+- **Username**: diana | **Password**: `pwd` 
 
 All users can browse and order. Only 2FA users can cancel orders.
 

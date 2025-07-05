@@ -10,8 +10,8 @@ exports.createOrder = (orderData) => {
     
     // Insert the main order record
     const insertOrderQuery = `
-      INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, status, created_at)
-      VALUES (?, ?, ?, ?, ?, 'confirmed', datetime('now'))
+      INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
     `;
     
     db.run(insertOrderQuery, [user_id, dish_id, size, total_price, used_2fa ? 1 : 0], function(err) {
@@ -69,7 +69,6 @@ exports.createOrder = (orderData) => {
                   ingredients,
                   total_price,
                   used_2fa,
-                  status: 'confirmed',
                   created_at: new Date().toISOString()
                 });
               }
@@ -86,7 +85,6 @@ exports.createOrder = (orderData) => {
           ingredients: [],
           total_price,
           used_2fa,
-          status: 'confirmed',
           created_at: new Date().toISOString()
         });
       }
@@ -210,7 +208,7 @@ exports.cancelOrder = (orderId, userId) => {
       SELECT oi.ingredient_id, oi.quantity
       FROM OrderIngredients oi
       JOIN Orders o ON oi.order_item_id = o.id
-      WHERE o.id = ? AND o.user_id = ? AND o.status = 'confirmed'
+      WHERE o.id = ? AND o.user_id = ?
     `;
     
     db.all(getIngredientsQuery, [orderId, userId], (err, ingredients) => {
@@ -222,7 +220,7 @@ exports.cancelOrder = (orderId, userId) => {
       // Check if order exists and can be cancelled
       const checkOrderQuery = `
         SELECT id FROM Orders 
-        WHERE id = ? AND user_id = ? AND status = 'confirmed'
+        WHERE id = ? AND user_id = ?
       `;
       
       db.get(checkOrderQuery, [orderId, userId], (err, order) => {

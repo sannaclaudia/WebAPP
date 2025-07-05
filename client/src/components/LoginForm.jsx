@@ -220,7 +220,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
             {isUpgradeMode && (
               <Button 
                 variant="outline-secondary"
-                onClick={onCancelUpgrade || (() => window.history.back())}
+                onClick={onCancelUpgrade || (() => navigate('/'))}
                 className="fw-bold border-0"
                 style={{ 
                   borderRadius: '25px',
