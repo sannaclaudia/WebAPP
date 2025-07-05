@@ -226,12 +226,12 @@ function OrderConfigurator({
     <div>
       {/* Header with total price in top right */}
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <h5 className="fw-bold mb-0" style={{ color: '#1e40af' }}>
+        <h5 className="fw-bold mb-0" style={{ color: '#ffffff' }}>
           <i className="bi bi-gear me-2"></i>
           Configure Your Order
         </h5>
         <div className="text-end">
-          <div className="fw-bold" style={{ color: '#1e40af', fontSize: '1.2rem' }}>
+          <div className="fw-bold" style={{ color: '#ffffff', fontSize: '1.2rem' }}>
             Total: €{calculateTotal().toFixed(2)}
           </div>
         </div>
@@ -239,15 +239,19 @@ function OrderConfigurator({
 
       {/* Dish Selection */}
       <Form.Group className="mb-4">
-        <Form.Label className="fw-semibold">Base Dish</Form.Label>
+        <Form.Label className="fw-semibold" style={{ color: '#ffffff' }}>Base Dish</Form.Label>
         <div className="d-flex gap-2">
           {dishes.map(dish => (
             <Button
               key={dish.id}
-              variant={selectedDish?.id === dish.id ? 'primary' : 'outline-primary'}
               onClick={() => setSelectedDish(dish)}
               className="flex-fill text-capitalize"
-              style={{ borderRadius: '10px' }}
+              style={{ 
+                borderRadius: '10px',
+                backgroundColor: selectedDish?.id === dish.id ? '#ffffff' : '#7f1d1d',
+                color: selectedDish?.id === dish.id ? '#7f1d1d' : '#ffffff',
+                border: 'none'
+              }}
             >
               {dish.name}
             </Button>
@@ -257,7 +261,7 @@ function OrderConfigurator({
 
       {/* Size Selection */}
       <Form.Group className="mb-4">
-        <Form.Label className="fw-semibold">Size</Form.Label>
+        <Form.Label className="fw-semibold" style={{ color: '#ffffff' }}>Size</Form.Label>
         <div className="d-flex gap-2">
           {['Small', 'Medium', 'Large'].map(size => {
             const sizeBasePrices = {
@@ -270,17 +274,21 @@ function OrderConfigurator({
             return (
               <Button
                 key={size}
-                variant={selectedSize === size ? 'primary' : 'outline-primary'}
                 onClick={() => handleSizeChange(size)}
                 className="flex-fill"
-                style={{ borderRadius: '10px' }}
+                style={{ 
+                  borderRadius: '10px',
+                  backgroundColor: selectedSize === size ? '#ffffff' : '#7f1d1d',
+                  color: selectedSize === size ? '#7f1d1d' : '#ffffff',
+                  border: 'none'
+                }}
               >
                 {size} (€{basePrice})
               </Button>
             );
           })}
         </div>
-        <Form.Text className="text-muted">
+        <Form.Text style={{ color: '#ffffff' }}>
           {selectedSize} allows up to {pricing.maxIngredients[selectedSize] || 0} ingredients
         </Form.Text>
       </Form.Group>
@@ -312,7 +320,7 @@ function OrderConfigurator({
 
       {/* Ingredient Selection */}
       <Form.Group className="mb-4">
-        <Form.Label className="fw-semibold">Add Ingredients</Form.Label>
+        <Form.Label className="fw-semibold" style={{ color: '#ffffff' }}>Add Ingredients</Form.Label>
         <div className="row g-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
           {ingredients.map(ingredient => {
             const status = getIngredientStatus(ingredient);
@@ -323,11 +331,15 @@ function OrderConfigurator({
               <div key={`ingredient-option-${ingredient.id}`} className="col-12">
                 <div className="d-flex gap-2">
                   <Button
-                    variant={status.variant}
                     disabled={status.disabled}
                     onClick={() => handleIngredientAdd(ingredient.id)}
                     className="flex-grow-1 text-start d-flex justify-content-between align-items-center"
-                    style={{ borderRadius: '8px' }}
+                    style={{ 
+                      borderRadius: '8px',
+                      backgroundColor: status.disabled ? '#f8f9fa' : '#ffffff',
+                      color: status.disabled ? '#6c757d' : '#7f1d1d',
+                      border: '1px solid #7f1d1d'
+                    }}
                   >
                     <div>
                       <div className="fw-semibold text-capitalize">{ingredient.name}</div>
@@ -343,11 +355,16 @@ function OrderConfigurator({
                   
                   <div className="d-flex gap-1">
                     <Button
-                      variant="outline-success"
                       size="sm"
                       onClick={() => handleIngredientAdd(ingredient.id)}
                       disabled={!canAdd}
-                      style={{ borderRadius: '8px', minWidth: '40px' }}
+                      style={{ 
+                        borderRadius: '8px', 
+                        minWidth: '40px',
+                        backgroundColor: canAdd ? '#ffffff' : '#f8f9fa',
+                        color: canAdd ? '#198754' : '#6c757d',
+                        border: canAdd ? '1px solid #198754' : '1px solid #dee2e6'
+                      }}
                       title={canAdd ? "Add one" : "Cannot add more"}
                     >
                       <i className="bi bi-plus"></i>
@@ -355,10 +372,15 @@ function OrderConfigurator({
                     
                     {currentQuantity > 0 && (
                       <Button
-                        variant="outline-danger"
                         size="sm"
                         onClick={() => handleIngredientRemove(ingredient.id)}
-                        style={{ borderRadius: '8px', minWidth: '40px' }}
+                        style={{ 
+                          borderRadius: '8px', 
+                          minWidth: '40px',
+                          backgroundColor: '#ffffff',
+                          color: '#dc3545',
+                          border: '1px solid #dc3545'
+                        }}
                         title="Remove one"
                       >
                         <i className="bi bi-dash"></i>
@@ -378,7 +400,6 @@ function OrderConfigurator({
           <h6 className="fw-bold mb-2">Order Summary</h6>
           <div className="d-flex justify-content-between mb-1">
             <span>{selectedDish?.name} ({selectedSize})</span>
-            <span>€{selectedDish?.base_price ? selectedDish.base_price.toFixed(2) : '0.00'}</span>
           </div>
           <div className="d-flex justify-content-between mb-1">
             <span>Base price for {selectedSize}</span>
@@ -399,7 +420,8 @@ function OrderConfigurator({
         className="w-100 fw-bold border-0 shadow-sm"
         style={{ 
           borderRadius: '25px',
-          background: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 100%)',
+          backgroundColor: '#ffffff',
+          color: '#7f1d1d',
           padding: '12px'
         }}
         disabled={!selectedDish}

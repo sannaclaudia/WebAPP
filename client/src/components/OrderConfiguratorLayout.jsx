@@ -134,8 +134,8 @@ function OrderConfiguratorLayout() {
   return (
     <Row className="g-3 g-md-4">
       {/* LEFT SIDE: Entire ingredient list (as per professor's requirements) */}
-      <Col xs={12} xl={8}>
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+      <Col xs={12} xl={5}>
+        <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
           <div className="card-body p-0">
             <MenuBrowser
               dishes={dishes}
@@ -147,8 +147,8 @@ function OrderConfiguratorLayout() {
       </Col>
       
       {/* RIGHT SIDE: Current configuration (as per professor's requirements) */}
-      <Col xs={12} xl={4}>
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+      <Col xs={12} xl={7}>
+        <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
           <div className="card-body p-3 p-md-4">
             <OrderConfigurator
               user={user}

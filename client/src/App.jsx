@@ -137,12 +137,12 @@ function App() {
   // --- Routing ---
   return (
     <div className="min-vh-100 w-100" style={{ 
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: '#ffffff',
       margin: 0,
       padding: 0
     }}>
       <Container fluid className="p-0">
-        <div className="px-3 py-4" style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%)' }}>
+        <div className="px-3 py-4" style={{ minHeight: '100vh', background: '#ffffff' }}>
           <Routes>
             <Route path="/login" element={<LoginLayout onLogin={handleLogin} totpRequired={totpRequired} onTotp={handleTotp} onSkipTotp={handleSkipTotp} isUpgradeMode={isUpgradeMode} onCancelUpgrade={handleCancelUpgrade} />} />
             <Route path="/" element={<RestaurantLayout user={user} message={message} messageType={messageType} onLogout={handleLogout} showMessage={showMessage} onSessionUpgrade={handleSessionUpgrade} />} />

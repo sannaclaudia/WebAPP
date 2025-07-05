@@ -219,51 +219,76 @@ exports.cancelOrder = (orderId, userId) => {
         return;
       }
       
-      // Update order status to cancelled
-      const updateOrderQuery = `
-        UPDATE Orders 
-        SET status = 'cancelled' 
+      // Check if order exists and can be cancelled
+      const checkOrderQuery = `
+        SELECT id FROM Orders 
         WHERE id = ? AND user_id = ? AND status = 'confirmed'
       `;
       
-      db.run(updateOrderQuery, [orderId, userId], function(err) {
+      db.get(checkOrderQuery, [orderId, userId], (err, order) => {
         if (err) {
           reject(err);
           return;
         }
         
-        if (this.changes === 0) {
+        if (!order) {
           reject(new Error('Order not found or cannot be cancelled'));
           return;
         }
         
-        // Restore ingredient availability
-        if (ingredients.length > 0) {
-          let completed = 0;
-          let hasError = false;
+        // Delete order ingredients first
+        const deleteIngredientsQuery = `
+          DELETE FROM OrderIngredients 
+          WHERE order_item_id = ?
+        `;
+        
+        db.run(deleteIngredientsQuery, [orderId], (err) => {
+          if (err) {
+            reject(err);
+            return;
+          }
           
-          const restoreAvailabilityQuery = `
-            UPDATE Ingredients 
-            SET available_portions = available_portions + ? 
-            WHERE id = ? AND available_portions IS NOT NULL
+          // Delete the order
+          const deleteOrderQuery = `
+            DELETE FROM Orders 
+            WHERE id = ? AND user_id = ?
           `;
           
-          ingredients.forEach(ingredient => {
-            db.run(restoreAvailabilityQuery, [ingredient.quantity, ingredient.ingredient_id], (err) => {
-              if (err && !hasError) {
-                hasError = true;
-                reject(err);
-              } else {
-                completed++;
-                if (completed === ingredients.length && !hasError) {
-                  resolve({ success: true, message: 'Order cancelled successfully' });
-                }
-              }
-            });
+          db.run(deleteOrderQuery, [orderId, userId], function(err) {
+            if (err) {
+              reject(err);
+              return;
+            }
+            
+            // Restore ingredient availability
+            if (ingredients.length > 0) {
+              let completed = 0;
+              let hasError = false;
+              
+              const restoreAvailabilityQuery = `
+                UPDATE Ingredients 
+                SET available_portions = available_portions + ? 
+                WHERE id = ? AND available_portions IS NOT NULL
+              `;
+              
+              ingredients.forEach(ingredient => {
+                db.run(restoreAvailabilityQuery, [ingredient.quantity, ingredient.ingredient_id], (err) => {
+                  if (err && !hasError) {
+                    hasError = true;
+                    reject(err);
+                  } else {
+                    completed++;
+                    if (completed === ingredients.length && !hasError) {
+                      resolve({ success: true, message: 'Order cancelled and removed successfully' });
+                    }
+                  }
+                });
+              });
+            } else {
+              resolve({ success: true, message: 'Order cancelled and removed successfully' });
+            }
           });
-        } else {
-          resolve({ success: true, message: 'Order cancelled successfully' });
-        }
+        });
       });
     });
   });

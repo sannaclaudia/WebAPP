@@ -48,7 +48,7 @@ function OrderHistoryLayout() {
   return (
     <Row className="justify-content-center">
       <Col xs={12} lg={10}>
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+        <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
           <div className="card-body p-4">
             <OrderHistory
               orders={orders}

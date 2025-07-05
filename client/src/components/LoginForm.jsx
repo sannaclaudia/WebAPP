@@ -83,13 +83,13 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
     <div className="p-4">
       <div className="text-center mb-4">
         <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
-             style={{ width: '80px', height: '80px', background: 'linear-gradient(45deg, #1e40af, #3b82f6)' }}>
+             style={{ width: '80px', height: '80px', background: 'linear-gradient(45deg, #7f1d1d, #dc2626)' }}>
           <i className="bi bi-person-fill text-white" style={{ fontSize: '2.5rem' }}></i>
         </div>
-        <h3 className="fw-bold" style={{ color: '#1e40af' }}>
+        <h3 className="fw-bold" style={{ color: '#ffffff' }}>
           {isUpgradeMode ? 'Upgrade Session' : totpRequired ? 'Two-Factor Authentication' : 'Welcome Back!'}
         </h3>
-        <p className="text-muted">
+        <p className="text-white">
           {isUpgradeMode ? 'Enter your TOTP code to upgrade to full access' : totpRequired ? 'Please enter your TOTP code' : 'Sign in to your account'}
         </p>
       </div>
@@ -104,7 +104,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
       {!totpRequired && !isUpgradeMode ? (
         <Form onSubmit={handleLogin}>
           <Form.Group className="mb-3">
-            <Form.Label className="fw-semibold">Username</Form.Label>
+            <Form.Label className="fw-semibold text-white">Username</Form.Label>
             <Form.Control
               type="text"
               value={username}
@@ -117,7 +117,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
           </Form.Group>
 
           <Form.Group className="mb-4">
-            <Form.Label className="fw-semibold">Password</Form.Label>
+            <Form.Label className="fw-semibold text-white">Password</Form.Label>
             <Form.Control
               type="password"
               value={password}
@@ -134,7 +134,9 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
             className="w-100 fw-bold border-0 shadow-sm"
             style={{ 
               borderRadius: '25px',
-              background: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 100%)',
+              backgroundColor: '#ffffff',
+              color: '#7f1d1d',
+              border: 'none',
               padding: '12px'
             }}
             disabled={loading}
@@ -155,7 +157,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
       ) : (
         <Form onSubmit={handleTotp}>
           <Form.Group className="mb-4">
-            <Form.Label className="fw-semibold">TOTP Code</Form.Label>
+            <Form.Label className="fw-semibold text-white">TOTP Code</Form.Label>
             <Form.Control
               type="text"
               value={totpCode}
@@ -166,7 +168,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
               style={{ borderRadius: '10px', padding: '12px 16px', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '0.2rem' }}
               placeholder="000000"
             />
-            <Form.Text className="text-muted">
+            <Form.Text className="text-white">
               Enter the 6-digit code from your authenticator app
             </Form.Text>
           </Form.Group>
@@ -177,7 +179,9 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
               className="fw-bold border-0 shadow-sm"
               style={{ 
                 borderRadius: '25px',
-                background: 'linear-gradient(90deg, #1e40af 0%, #3b82f6 100%)',
+                backgroundColor: '#ffffff',
+                color: '#7f1d1d',
+                border: 'none',
                 padding: '12px'
               }}
               disabled={loading}
@@ -204,7 +208,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
                   borderRadius: '25px',
                   padding: '12px',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#6c757d'
+                  color: '#ffffff'
                 }}
                 disabled={loading}
               >
@@ -222,7 +226,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
                   borderRadius: '25px',
                   padding: '12px',
                   background: 'rgba(255, 255, 255, 0.1)',
-                  color: '#6c757d'
+                  color: '#ffffff'
                 }}
                 disabled={loading}
               >
@@ -245,7 +249,7 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
             borderRadius: '20px',
             padding: '8px 16px',
             background: 'rgba(255, 255, 255, 0.1)',
-            color: '#6c757d'
+            color: '#ffffff'
           }}
           disabled={loading}
         >

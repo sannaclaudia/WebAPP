@@ -27,53 +27,13 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
 
   return (
     <div className="p-4">
-      <h5 className="fw-bold mb-3" style={{ color: '#1e40af' }}>
+      <h5 className="fw-bold mb-3" style={{ color: '#ffffff' }}>
         <i className="bi bi-list-ul me-2"></i>
-        Menu & Ingredients
+        Available Ingredients
       </h5>
-
-      {/* Base Dishes */}
-      <div className="mb-4">
-        <h6 className="fw-semibold mb-3 text-muted">Base Dishes</h6>
-        <div className="row g-2">
-          {dishes.map(dish => (
-            <div key={dish.id} className="col-12">
-              <Card className="border-0 shadow-sm" style={{ borderRadius: '8px' }}>
-                <Card.Body className="p-2">
-                  <div className="d-flex justify-content-between align-items-center">
-                    <div>
-                      <div className="fw-semibold text-capitalize">{dish.name}</div>
-                      <div className="small text-muted">All sizes available</div>
-                    </div>
-                    <div className="text-end">
-                      <div className="small">
-                        <div>Small: €{pricing.prices?.Small || 5}</div>
-                        <div>Medium: €{pricing.prices?.Medium || 7}</div>
-                        <div>Large: €{pricing.prices?.Large || 9}</div>
-                      </div>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </div>
-          ))}
-        </div>
-      </div>
-     
-
-      {/* Sizes (replaces Size Multipliers) */}
-      <div className="mb-4">
-        <h6 className="fw-semibold mb-3 text-muted">Available Sizes</h6>
-        <div className="small text-muted">
-          <div><strong>Small:</strong> Max {pricing.maxIngredients?.Small || 3} ingredients</div>
-          <div><strong>Medium:</strong> Max {pricing.maxIngredients?.Medium || 5} ingredients</div>
-          <div><strong>Large:</strong> Max {pricing.maxIngredients?.Large || 7} ingredients</div>
-        </div>
-      </div>
 
       {/* Ingredients */}
       <div>
-        <h6 className="fw-semibold mb-3 text-muted">Available Ingredients</h6>
         <div className="row g-2">
           {ingredients.map(ingredient => (
             <div key={ingredient.id} className="col-12">
@@ -82,9 +42,9 @@ function MenuBrowser({ dishes, ingredients, pricing }) {
                 overlay={
                   <Tooltip>
                     <div>
-                      <div className="fw-bold">{ingredient.name}</div>
-                      <div>Price: €{ingredient.price.toFixed(2)}</div>
-                      <div>
+                      <div className="fw-bold text-white">{ingredient.name}</div>
+                      <div className="text-white">Price: €{ingredient.price.toFixed(2)}</div>
+                      <div className="text-white">
                         Available: {ingredient.available_portions === null ? 'Unlimited' : ingredient.available_portions}
                       </div>
                       {renderIngredientConstraints(ingredient)}

@@ -15,18 +15,22 @@ function NotFoundLayout() {
   return (
     <Row className="justify-content-center mt-5">
       <Col className="text-center">
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+        <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
           <div className="card-body p-5">
-            <h2 className="text-danger mb-4 fw-bold">404 - Page Not Found</h2>
-            <p className="lead text-muted mb-4">
+            <h2 className="text-white mb-4 fw-bold">404 - Page Not Found</h2>
+            <p className="lead text-white mb-4">
               Sorry, the page you are looking for doesn't exist or has been moved.
             </p>
             <div className="d-flex gap-3 justify-content-center flex-wrap">
               <Link to="/">
                 <Button 
-                  variant="primary" 
                   size="lg" 
-                  style={{ borderRadius: '25px' }}
+                  style={{ 
+                    borderRadius: '25px',
+                    backgroundColor: '#ffffff',
+                    color: '#7f1d1d',
+                    border: 'none'
+                  }}
                 >
                   <i className="bi bi-house-fill me-2"></i>
                   Go to Restaurant
@@ -45,8 +49,8 @@ function NotFoundLayout() {
 function LoginLayout({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, onCancelUpgrade }) {
   return (
     <Row className="justify-content-center">
-      <Col>
-        <div className="card shadow-lg border-0" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '15px' }}>
+      <Col xs={12} sm={10} md={8} lg={6} xl={5}>
+        <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
           <div className="card-body">
             <LoginForm 
               onLogin={onLogin} 
@@ -152,21 +156,22 @@ function WelcomeLayout({ user }) {
   }, []);
 
   return (
-    <div className="text-center py-3 py-md-5">
-      <div className="card shadow-lg border-0 mx-auto" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '20px', maxWidth: '1200px' }}>
-        <div className="card-body p-3 p-md-5">
-          <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mb-md-4" 
-               style={{ width: '80px', height: '80px', background: 'linear-gradient(45deg, #1e40af, #3b82f6)' }}>
-            <i className="bi bi-shop text-white" style={{ fontSize: '2.5rem' }}></i>
+    <div className="py-3 py-md-5">
+      {user ? (
+        /* Logged in user layout */
+        <div className="text-center">
+          <div className="mb-4">
+            <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                 style={{ width: '80px', height: '80px', background: 'linear-gradient(45deg, #7f1d1d, #dc2626)' }}>
+              <i className="bi bi-shop text-white" style={{ fontSize: '2.5rem' }}></i>
+            </div>
+            <h1 className="fw-bold mb-3 fs-2 fs-md-1" style={{ color: '#7f1d1d' }}>
+              Welcome to Our Restaurant
+            </h1>
           </div>
-          
-          <h1 className="fw-bold mb-3 fs-2 fs-md-1" style={{ color: '#1e40af' }}>
-            Welcome to Our Restaurant
-          </h1>
-          
-          {user ? (
-            <div>
-              <p className="lead text-muted mb-4 fs-6 fs-md-5">
+          <div className="card shadow-lg border-0 mx-auto" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '20px', maxWidth: '800px' }}>
+            <div className="card-body p-3 p-md-5">
+              <p className="lead text-white mb-4 fs-5 fs-md-5">
                 Hello <strong>{user.username}</strong>! Ready to create your perfect meal?
               </p>
               <div className="d-flex gap-2 gap-md-3 justify-content-center flex-column flex-sm-row">
@@ -174,7 +179,13 @@ function WelcomeLayout({ user }) {
                   to={{
                     pathname: "/order"
                   }}
-                  className="btn btn-outline-primary btn-lg" style={{ borderRadius: '25px' }}
+                  className="btn btn-lg" 
+                  style={{ 
+                    borderRadius: '25px',
+                    backgroundColor: '#ffffff',
+                    color: '#7f1d1d',
+                    border: 'none'
+                  }}
                 ><i className="bi bi-cart-plus me-2"></i>
                   Create New Order 
                 </Link>
@@ -182,27 +193,29 @@ function WelcomeLayout({ user }) {
                   to={{
                     pathname: "/history"
                   }}
-                  className="btn btn-outline-primary btn-lg" style={{ borderRadius: '25px' }}
+                  className="btn btn-lg" 
+                  style={{ 
+                    borderRadius: '25px',
+                    backgroundColor: '#ffffff',
+                    color: '#7f1d1d',
+                    border: 'none'
+                  }}
                 > <i className="bi bi-clock-history me-2"></i>
                   View Order History
                 </Link>
               </div>
             </div>
-          ) : (
-            <div>
-              <p className="lead text-muted mb-4 fs-6 fs-md-5">
-                Customize your perfect dish with our fresh ingredients and enjoy fast delivery!
-              </p>
-              <div className="mb-4">
-                <a href="/login" className="btn btn-primary btn-lg" style={{ borderRadius: '25px' }}>
-                  <i className="bi bi-box-arrow-in-right me-2"></i>
-                  Sign In to Order
-                </a>
-              </div>
-              <div className="mt-4 mt-md-5">
-                <h3 className="mb-3 mb-md-4 fs-4 fs-md-3" style={{ color: '#1e40af' }}>Browse Our Menu</h3>
+          </div>
+        </div>
+      ) : (
+        /* Not logged in layout - ingredients on left, welcome + login on right */
+        <Row className="g-3 g-md-4">
+          {/* LEFT SIDE: Ingredients List */}
+          <Col xs={12} lg={5}>
+            <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
+              <div className="card-body p-0">
                 {loading ? (
-                  <div className="text-center py-3">
+                  <div className="text-center py-5">
                     <div className="spinner-border text-primary" role="status">
                       <span className="visually-hidden">Loading...</span>
                     </div>
@@ -216,9 +229,48 @@ function WelcomeLayout({ user }) {
                 )}
               </div>
             </div>
-          )}
-        </div>
-      </div>
+          </Col>
+
+          {/* RIGHT SIDE: Welcome + Login */}
+          <Col xs={12} lg={7}>
+            <div className="card shadow-lg border-0" style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', borderRadius: '15px' }}>
+              <div className="card-body p-3 p-md-4 text-center">
+                <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+                     style={{ width: '60px', height: '60px', background: 'linear-gradient(45deg, #7f1d1d, #dc2626)' }}>
+                  <i className="bi bi-shop text-white" style={{ fontSize: '1.8rem' }}></i>
+                </div>
+                <h2 className="fw-bold mb-3 fs-3" style={{ color: '#ffffff' }}>
+                  Welcome to Our Restaurant
+                </h2>
+                <p className="text-white mb-4">
+                  Customize your perfect dish with our fresh ingredients and enjoy fast delivery!
+                </p>
+                <div className="d-grid mb-4">
+                  <Link
+                    to="/login"
+                    className="btn btn-lg" 
+                    style={{ 
+                      borderRadius: '25px',
+                      backgroundColor: '#ffffff',
+                      color: '#7f1d1d',
+                      border: 'none'
+                    }}
+                  >
+                    <i className="bi bi-box-arrow-in-right me-2"></i>
+                    Sign In to Order
+                  </Link>
+                </div>
+                <div className="pt-3 border-top">
+                  <p className="small text-white mb-0">
+                    <i className="bi bi-info-circle me-1"></i>
+                    Sign in to create custom orders and track your order history
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Col>
+        </Row>
+      )}
     </div>
   );
 }

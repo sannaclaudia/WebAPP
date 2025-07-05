@@ -1,7 +1,72 @@
-import { Card, Button, Badge, Spinner } from 'react-bootstrap';
+import { Card, Button, Badge, Spinner, Modal } from 'react-bootstrap';
 import dayjs from 'dayjs';
+import { useState } from 'react';
 
 function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState(null);
+
+  const handleCancelClick = (orderId) => {
+    setOrderToCancel(orderId);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (orderToCancel) {
+      onCancelOrder(orderToCancel);
+      setShowConfirmModal(false);
+      setOrderToCancel(null);
+    }
+  };
+
+  const handleCancelModal = () => {
+    setShowConfirmModal(false);
+    setOrderToCancel(null);
+  };
+
+  // Confirmation Modal Component
+  const ConfirmationModal = () => (
+    <Modal show={showConfirmModal} onHide={handleCancelModal} centered>
+      <Modal.Header closeButton style={{ background: 'linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%)', border: 'none' }}>
+        <Modal.Title className="text-white">
+          <i className="bi bi-exclamation-triangle me-2"></i>
+          Confirm Cancellation
+        </Modal.Title>
+      </Modal.Header>
+      <Modal.Body className="p-4">
+        <div className="text-center">
+          <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-3" 
+               style={{ width: '60px', height: '60px', background: 'linear-gradient(45deg, #dc3545, #c82333)' }}>
+            <i className="bi bi-x-circle text-white" style={{ fontSize: '1.5rem' }}></i>
+          </div>
+          <p className="mb-2 fs-5">Are you sure you want to cancel this order?</p>
+          <p className="text-muted">This action cannot be undone.</p>
+        </div>
+      </Modal.Body>
+      <Modal.Footer className="border-0 justify-content-center">
+        <Button 
+          variant="secondary" 
+          onClick={handleCancelModal}
+          style={{ borderRadius: '20px', minWidth: '100px' }}
+        >
+          Keep Order
+        </Button>
+        <Button 
+          onClick={handleConfirmCancel}
+          style={{ 
+            borderRadius: '20px', 
+            minWidth: '100px',
+            backgroundColor: '#dc3545',
+            color: '#ffffff',
+            border: 'none'
+          }}
+        >
+          <i className="bi bi-x-circle me-1"></i>
+          Cancel Order
+        </Button>
+      </Modal.Footer>
+    </Modal>
+  );
   if (loading) {
     return (
       <div className="text-center py-5">
@@ -17,10 +82,10 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
         <div className="card border-0 shadow-lg" style={{ background: 'rgba(255, 255, 255, 0.95)', borderRadius: '20px' }}>
           <div className="card-body p-5">
             <div className="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
-                 style={{ width: '100px', height: '100px', background: 'linear-gradient(45deg, #1e40af, #3b82f6)' }}>
+                 style={{ width: '100px', height: '100px', background: 'linear-gradient(45deg, #7f1d1d, #dc2626)' }}>
               <i className="bi bi-cart-x text-white" style={{ fontSize: '3rem' }}></i>
             </div>
-            <h3 className="fw-bold mb-3" style={{ color: '#1e40af' }}>No Orders Yet</h3>
+            <h3 className="fw-bold mb-3" style={{ color: '#7f1d1d' }}>No Orders Yet</h3>
             <p className="lead text-muted mb-0">You haven't placed any orders. Start by creating your first order!</p>
           </div>
         </div>
@@ -32,7 +97,9 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
 
   return (
     <div>
-      <h4 className="fw-bold mb-4" style={{ color: '#1e40af' }}>
+      <ConfirmationModal />
+      
+      <h4 className="fw-bold mb-4" style={{ color: '#ffffff' }}>
         <i className="bi bi-clock-history me-2"></i>
         Your Order History
       </h4>
@@ -117,14 +184,14 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                 {order.status === 'confirmed' && canCancel && (
                   <div className="d-flex justify-content-end">
                     <Button
-                      variant="outline-danger"
                       size="sm"
-                      onClick={() => {
-                        if (window.confirm('Are you sure you want to cancel this order?')) {
-                          onCancelOrder(order.id);
-                        }
+                      onClick={() => handleCancelClick(order.id)}
+                      style={{ 
+                        borderRadius: '20px',
+                        backgroundColor: '#ffffff',
+                        color: '#dc3545',
+                        border: '1px solid #dc3545'
                       }}
-                      style={{ borderRadius: '20px' }}
                     >
                       <i className="bi bi-x-circle me-1"></i>
                       Cancel Order
