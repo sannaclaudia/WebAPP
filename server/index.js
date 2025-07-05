@@ -17,7 +17,7 @@ const ingredientDao = require('./DAO/ingredient-dao');
 const orderDao = require('./DAO/order-dao');
 const validationDao = require('./DAO/validation-dao');
 
-const { validationResult, body } = require('express-validator');
+const { validationResult, body, param } = require('express-validator');
 
 //----------------------------------------------------------------------------
 // Create the Express app and configure middleware
@@ -95,7 +95,16 @@ function clientUserInfo(req) {
 
 //----------------------------------------------------------------------------
 // Login (username/password)
-app.post('/api/sessions', function(req, res, next) {
+app.post('/api/sessions', [
+  body('username').notEmpty().withMessage('Username is required').isLength({ min: 1, max: 255 }).withMessage('Username must be between 1 and 255 characters'),
+  body('password').notEmpty().withMessage('Password is required').isLength({ min: 1 }).withMessage('Password cannot be empty')
+], function(req, res, next) {
+  // Check validation result
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+  }
+
   passport.authenticate('local', function(err, user, info) {
     if (err) return next(err);
     if (!user) return res.status(401).json(info);
@@ -116,7 +125,17 @@ app.post('/api/sessions', function(req, res, next) {
 
 //----------------------------------------------------------------------------
 // TOTP verification (2FA) - handles both initial login and session upgrades
-app.post('/api/login-totp', isLoggedIn, async function(req, res) {
+app.post('/api/login-totp', [
+  body('code').notEmpty().withMessage('TOTP code is required')
+    .isLength({ min: 6, max: 6 }).withMessage('TOTP code must be exactly 6 digits')
+    .isNumeric().withMessage('TOTP code must contain only numbers')
+], isLoggedIn, async function(req, res) {
+  // Check validation result
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+  }
+
   try {
     const { code } = req.body;
     
@@ -240,7 +259,15 @@ app.get('/api/orders/history', isLoggedIn, async (req, res) => {
 
 //----------------------------------------------------------------------------
 // DELETE /api/orders/:id - Cancel an order (requires 2FA)
-app.delete('/api/orders/:id', isLoggedIn, async (req, res) => {
+app.delete('/api/orders/:id', [
+  param('id').isInt({ min: 1 }).withMessage('Order ID must be a positive integer')
+], isLoggedIn, async (req, res) => {
+  // Check validation result
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+  }
+
   try {
     // Check if user authenticated with 2FA
     if (req.session.secondFactor !== 'totp') {
@@ -258,7 +285,22 @@ app.delete('/api/orders/:id', isLoggedIn, async (req, res) => {
 
 //----------------------------------------------------------------------------
 // POST /api/orders - Submit a new order
-app.post('/api/orders', isLoggedIn, async (req, res) => {
+app.post('/api/orders', [
+  body('dish_id').optional().isInt({ min: 1 }).withMessage('Dish ID must be a positive integer'),
+  body('dishId').optional().isInt({ min: 1 }).withMessage('Dish ID must be a positive integer'),
+  body('size').notEmpty().withMessage('Size is required')
+    .isIn(['Small', 'Medium', 'Large']).withMessage('Size must be Small, Medium, or Large'),
+  body('ingredients').optional().isArray().withMessage('Ingredients must be an array'),
+  body('ingredients.*').optional().isInt({ min: 1 }).withMessage('Each ingredient ID must be a positive integer'),
+  body('ingredientIds').optional().isArray().withMessage('Ingredient IDs must be an array'),
+  body('ingredientIds.*').optional().isInt({ min: 1 }).withMessage('Each ingredient ID must be a positive integer')
+], isLoggedIn, async (req, res) => {
+  // Check validation result
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: 'Validation failed', details: errors.array() });
+  }
+
   try {
     // Support both naming conventions (dish_id and dishId)
     const dish_id = req.body.dish_id || req.body.dishId;

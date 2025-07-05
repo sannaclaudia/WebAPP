@@ -1,8 +1,8 @@
-import { Card, Button, Badge, Spinner, Modal } from 'react-bootstrap';
+import { Card, Button, Spinner, Modal } from 'react-bootstrap';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
-function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
+function OrderHistory({ orders, user, loading, onCancelOrder}) {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [orderToCancel, setOrderToCancel] = useState(null);
 
@@ -132,12 +132,6 @@ function OrderHistory({ orders, user, loading, onCancelOrder, showMessage }) {
                     </div>
                   </div>
                   <div className="text-end">
-                    <Badge 
-                      bg="success"
-                      className="mb-2"
-                    >
-                      Active
-                    </Badge>
                     <div className="fw-bold text-primary">
                       €{order.total_price.toFixed(2)}
                     </div>

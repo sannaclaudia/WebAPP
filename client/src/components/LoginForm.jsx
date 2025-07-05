@@ -61,24 +61,6 @@ function LoginForm({ onLogin, totpRequired, onTotp, onSkipTotp, isUpgradeMode, o
     }
   };
 
-  const handleUsernameChange = (e) => {
-    setUsername(e.target.value);
-    if (error) setError('');
-  };
-
-  //-----------------------------------------------------------------------------
-  // Handle password change
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    if (error) setError('');
-  };
-
-  // Handle TOTP code change
-  const handleTotpChange = (e) => {
-    setTotpCode(e.target.value);
-    if (error) setError('');
-  };
-  
   return (
     <div className="p-4">
       <div className="text-center mb-4">

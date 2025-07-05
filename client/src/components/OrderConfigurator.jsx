@@ -68,7 +68,6 @@ function OrderConfigurator({
         return;
       }
     }
-
     // Add ingredient
     setSelectedIngredients(prev => [...prev, ingredientId]);
   };

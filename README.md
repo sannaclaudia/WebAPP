@@ -1,4 +1,3 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/xnU44QZi)
 # Exam #2: "Restaurant"
 ## Student: s343470 SANNA CLAUDIA 
 
@@ -52,15 +51,27 @@
 ## 3. Overall
 
 ### Screenshots
+#### Home Page
+![Home page](./img/homepage.png)
 
-![Order Configuration Page](./screenshot-order-config.png)
+#### Order Configurator
+![Order Configuration Page](./img/create_order.png)
+
+#### History
+![History](./img/history.png)
+
+#### Login
+![Login](./img/login.png)
+
+#### TOTP Verification
+![TOTP](./img/totp.png)
 
 ## User Accounts
 
-- **Username**: alice | **Password**: `pwd` 
-- **Username**: bob | **Password**: `pwd`  
-- **Username**: charlie | **Password**: `pwd` 
-- **Username**: diana | **Password**: `pwd` 
+- **Username**: alice | **Password**: pwd
+- **Username**: bob | **Password**: pwd 
+- **Username**: charlie | **Password**: pwd 
+- **Username**: diana | **Password**: pwd
 
 All users can browse and order. Only 2FA users can cancel orders.
 
