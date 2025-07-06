@@ -9,12 +9,13 @@ exports.createOrder = (orderData) => {
     const { user_id, dish_id, size, ingredients, total_price, used_2fa } = orderData;
     
     // Insert the main order record
+    const currentTimestamp = new Date().toISOString();
     const insertOrderQuery = `
       INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     
-    db.run(insertOrderQuery, [user_id, dish_id, size, total_price, used_2fa ? 1 : 0], function(err) {
+    db.run(insertOrderQuery, [user_id, dish_id, size, total_price, used_2fa ? 1 : 0, currentTimestamp], function(err) {
       if (err) {
         reject(err);
         return;
@@ -69,7 +70,7 @@ exports.createOrder = (orderData) => {
                   ingredients,
                   total_price,
                   used_2fa,
-                  created_at: new Date().toISOString()
+                  created_at: currentTimestamp
                 });
               }
             });
@@ -85,7 +86,7 @@ exports.createOrder = (orderData) => {
           ingredients: [],
           total_price,
           used_2fa,
-          created_at: new Date().toISOString()
+          created_at: currentTimestamp
         });
       }
     });
