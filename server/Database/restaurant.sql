@@ -159,7 +159,7 @@ INSERT INTO IngredientIncompatibilities (ingredient_id, incompatible_with_id)
 INSERT INTO IngredientIncompatibilities (ingredient_id, incompatible_with_id)
   SELECT i1.id, i2.id FROM Ingredients i1, Ingredients i2 WHERE i1.name = 'olives' AND i2.name = 'anchovies';
 
--- Insert Users (passwords are all 'password' hashed with salt, all with same TOTP secret)
+-- Insert Users (passwords are all 'pwd' hashed with salt, all with same TOTP secret)
 INSERT INTO Users (username, password_hash, salt, totp_secret) VALUES 
   ('alice', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI'),
   ('bob', '15d3c4fca80fa608dcedeb65ac10eff78d20c88800d016369a3d2963742ea288', '72e4eeb14def3b21', 'LXBSMDTMSP2I5XFXIYRGFVWSFI'),

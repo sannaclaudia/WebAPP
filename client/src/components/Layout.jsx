@@ -444,10 +444,6 @@ function OrderConfiguratorLayout() {
       // Parse server error to identify unavailable ingredients
       const unavailableIngredients = parseUnavailableIngredients(errorMessage, ingredients);
       
-      // Debug logging
-      console.log('Error message:', errorMessage);
-      console.log('Parsed unavailable ingredients:', unavailableIngredients);
-      
       if (unavailableIngredients.length > 0) {
         // Remove unavailable ingredients from selection
         setSelectedIngredients(prev => {
