@@ -123,9 +123,6 @@ function OrderHistory({ orders, user, loading, onCancelOrder}) {
                   <div>
                     <h6 className="fw-bold mb-1">
                       Order #{order.id}
-                      {order.used_2fa && (
-                        <i className="bi bi-shield-check text-success ms-2" title="Placed with 2FA"></i>
-                      )}
                     </h6>
                     <div className="small text-muted">
                       {dayjs(order.created_at).format('MMMM D, YYYY [at] h:mm A')}

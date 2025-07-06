@@ -306,6 +306,59 @@ function OrderConfiguratorLayout() {
     }
   });
 
+  // Helper function to parse server error messages and identify unavailable ingredients
+  const parseUnavailableIngredients = (errorMessage, availableIngredients) => {
+    const unavailableIngredients = [];
+    
+    // Check if it's an array of errors (from validation)
+    if (Array.isArray(errorMessage)) {
+      errorMessage.forEach(error => {
+        const match = error.match(/Not enough (.+?) available/i);
+        if (match) {
+          const ingredientName = match[1].toLowerCase();
+          const ingredient = availableIngredients.find(ing => 
+            ing.name.toLowerCase() === ingredientName
+          );
+          if (ingredient && !unavailableIngredients.some(ui => ui.id === ingredient.id)) {
+            unavailableIngredients.push(ingredient);
+          }
+        }
+      });
+    } else if (typeof errorMessage === 'string') {
+      // Handle single error message or string with multiple errors
+      // Split by common separators (comma, semicolon, newline)
+      const errors = errorMessage.split(/[,;\n]/).map(e => e.trim());
+      errors.forEach(error => {
+        const match = error.match(/Not enough (.+?) available/i);
+        if (match) {
+          const ingredientName = match[1].toLowerCase();
+          const ingredient = availableIngredients.find(ing => 
+            ing.name.toLowerCase() === ingredientName
+          );
+          if (ingredient && !unavailableIngredients.some(ui => ui.id === ingredient.id)) {
+            unavailableIngredients.push(ingredient);
+          }
+        }
+      });
+      
+      // Also check for the entire string as a single error message
+      if (errors.length === 1) {
+        const match = errorMessage.match(/Not enough (.+?) available/i);
+        if (match) {
+          const ingredientName = match[1].toLowerCase();
+          const ingredient = availableIngredients.find(ing => 
+            ing.name.toLowerCase() === ingredientName
+          );
+          if (ingredient && !unavailableIngredients.some(ui => ui.id === ingredient.id)) {
+            unavailableIngredients.push(ingredient);
+          }
+        }
+      }
+    }
+    
+    return unavailableIngredients;
+  };
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -380,9 +433,38 @@ function OrderConfiguratorLayout() {
     } catch (err) {
       console.error('Error submitting order:', err);
       
-      // Simplified error handling
-      const errorMessage = err.message || 'Unable to place order. Please try again.';
-      showMessage(errorMessage, 'danger');
+      // Extract the actual error message, which might be nested
+      let errorMessage = err.message || 'Unable to place order. Please try again.';
+      
+      // If the error contains an 'error' field (from server response), use that
+      if (err.error) {
+        errorMessage = err.error;
+      }
+      
+      // Parse server error to identify unavailable ingredients
+      const unavailableIngredients = parseUnavailableIngredients(errorMessage, ingredients);
+      
+      // Debug logging
+      console.log('Error message:', errorMessage);
+      console.log('Parsed unavailable ingredients:', unavailableIngredients);
+      
+      if (unavailableIngredients.length > 0) {
+        // Remove unavailable ingredients from selection
+        setSelectedIngredients(prev => {
+          const updatedIngredients = prev.filter(ingId => 
+            !unavailableIngredients.some(unavail => unavail.id === ingId)
+          );
+          return updatedIngredients;
+        });
+        
+        const ingredientNames = unavailableIngredients.map(ing => ing.name).join(', ');
+        showMessage(
+          `Some ingredients are no longer available and have been removed: ${ingredientNames}. Please review your order.`, 
+          'warning'
+        );
+      } else {
+        showMessage(errorMessage, 'danger');
+      }
       
       // Refresh ingredient data even on error to get current availability
       try {

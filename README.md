@@ -24,7 +24,7 @@
 - **Ingredients** - Available ingredients (id, name, price, available_portions)
 - **IngredientRequirements** - Ingredient dependencies (ingredient_id, required_ingredient_id)
 - **IngredientIncompatibilities** - Ingredient conflicts (ingredient_id, incompatible_with_id)
-- **Orders** - Customer orders (id, user_id, dish_id, size, total_price, created_at, used_2fa)
+- **Orders** - Customer orders (id, user_id, dish_id, size, total_price, created_at)
 - **DishPricing** - Stores pricing and size constraints for each dish (dish_id, size, base_price, max_ingredients)
 - **OrderIngredients** - Ingredients per order item (order_item_id, ingredient_id, quantity)
 

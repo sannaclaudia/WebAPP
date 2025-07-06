@@ -6,16 +6,16 @@ const db = new sqlite.Database('./Database/restaurant.sqlite');
 // Create a new order
 exports.createOrder = (orderData) => {
   return new Promise((resolve, reject) => {
-    const { user_id, dish_id, size, ingredients, total_price, used_2fa } = orderData;
+    const { user_id, dish_id, size, ingredients, total_price } = orderData;
     
     // Insert the main order record
     const currentTimestamp = new Date().toISOString();
     const insertOrderQuery = `
-      INSERT INTO Orders (user_id, dish_id, size, total_price, used_2fa, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO Orders (user_id, dish_id, size, total_price, created_at)
+      VALUES (?, ?, ?, ?, ?)
     `;
     
-    db.run(insertOrderQuery, [user_id, dish_id, size, total_price, used_2fa ? 1 : 0, currentTimestamp], function(err) {
+    db.run(insertOrderQuery, [user_id, dish_id, size, total_price, currentTimestamp], function(err) {
       if (err) {
         reject(err);
         return;
@@ -69,7 +69,6 @@ exports.createOrder = (orderData) => {
                   size,
                   ingredients,
                   total_price,
-                  used_2fa,
                   created_at: currentTimestamp
                 });
               }
@@ -85,7 +84,6 @@ exports.createOrder = (orderData) => {
           size,
           ingredients: [],
           total_price,
-          used_2fa,
           created_at: currentTimestamp
         });
       }

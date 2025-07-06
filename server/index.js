@@ -341,8 +341,7 @@ app.post('/api/orders', [
       dish_id,
       size,
       ingredients: ingredientsWithQuantity,
-      total_price: validationResult.totalPrice,
-      used_2fa: req.session.secondFactor === 'totp'
+      total_price: validationResult.totalPrice
     });
     
     res.status(201).json(order);
